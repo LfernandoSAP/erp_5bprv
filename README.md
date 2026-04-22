@@ -91,6 +91,27 @@ O projeto ja possui documentacao funcional para modulos e areas como:
 
 Referencia: [`docs/modules/README.md`](docs/modules/README.md)
 
+## Arquitetura
+
+O sistema segue uma estrutura monolitica modular, com frontend separado do backend e persistencia centralizada.
+
+```mermaid
+flowchart LR
+    U[Usuario] --> F[Frontend React + Vite]
+    F -->|HTTP /api| B[Backend FastAPI]
+    B --> R[Regras de negocio modulares]
+    R --> D[(PostgreSQL)]
+    R --> S[(SQLite local/legado)]
+    B --> X[Exportacoes PDF e Excel]
+    B --> A[Autenticacao e auditoria]
+```
+
+Leituras complementares:
+
+- [`docs/README-ARQUITETURA.md`](docs/README-ARQUITETURA.md)
+- [`docs/architecture.md`](docs/architecture.md)
+- [`docs/estado-atual.md`](docs/estado-atual.md)
+
 ## Instalacao e execucao local no Windows
 
 ### 1. Preparar o backend
@@ -163,6 +184,24 @@ git add .
 git commit -m "Descreve a alteracao"
 git push -u origin minha-feature
 ```
+
+## Como contribuir
+
+Para manter o projeto consistente, vale seguir este fluxo:
+
+1. leia primeiro [`docs/estado-atual.md`](docs/estado-atual.md) e [`docs/README-ARQUITETURA.md`](docs/README-ARQUITETURA.md)
+2. crie uma branch para a alteracao
+3. mantenha mudancas focadas por modulo ou problema
+4. atualize a documentacao em `docs/` quando a regra de negocio mudar
+5. valide frontend e backend localmente antes de publicar
+
+Boas praticas recomendadas:
+
+- nao versionar `.env`, bancos locais, logs ou `node_modules`
+- preservar a organizacao modular do backend e do frontend
+- preferir mudancas incrementais em vez de refactors amplos sem necessidade
+- registrar decisoes relevantes em documentacao quando mudarem comportamento de negocio
+- revisar impacto em exportacoes, filtros, permissoes e relatorios quando mexer em modulos operacionais
 
 ## Documentacao principal
 
