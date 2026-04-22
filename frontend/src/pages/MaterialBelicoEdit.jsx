@@ -1,0 +1,1025 @@
+﻿import { useEffect, useMemo, useState } from "react";
+
+import { appShellStyles as styles } from "../components/appShellStyles";
+import { custodyOptions } from "../constants/custodyOptions";
+import {
+  getMaterialBelicoById,
+  getMaterialBelicoTransferHistory,
+  transferMaterialBelico,
+  updateMaterialBelico,
+} from "../services/materialBelicoService";
+import { getPoliceOfficers } from "../services/policeOfficerService";
+import { getSectors, getUnits } from "../services/referenceDataService";
+import { readViewerAccess as readAuthAccess } from "../utils/authAccess";
+import { buildCustodySummary } from "../utils/custodyLabels";
+import {
+  buildMaterialBelicoExtraColumns,
+  buildMaterialBelicoFieldState,
+  buildCdcMaterialLabel,
+  getMaterialBelicoCategoryConfig,
+  isMaterialBelicoFieldRequired,
+  isMaterialBelicoFieldVisible,
+  normalizeMaterialBelicoCaliber,
+  resolvePrimaryAsset,
+  resolvePrimarySerial,
+} from "../utils/materialBelicoUtils";
+import {
+  buildOfficerOptionLabel,
+  buildOfficerSummary,
+  findOfficerByLookup,
+} from "../utils/officerLabels";
+import { formatSectorLabel } from "../utils/sectorOptions";
+import { buildHierarchicalUnitOptions } from "../utils/unitOptions";
+import { getDateInputProps, maskDate, toIsoDate } from "./policeOfficerRegistrationUtils";
+
+function MaterialBelicoEdit({ itemId, onBack }) {
+  const dateInputProps = getDateInputProps();
+  const [form, setForm] = useState({
+    numeroSerie: "",
+    patrimonio: "",
+    unitId: "",
+    custodyType: "RESERVA_UNIDADE",
+    custodySectorId: "",
+    status: "Ativo",
+    officerLookup: "",
+    policeOfficerId: "",
+    ...buildMaterialBelicoFieldState(),
+  });
+  const [item, setItem] = useState(null);
+  const [units, setUnits] = useState([]);
+  const [sectors, setSectors] = useState([]);
+  const [policeOfficers, setPoliceOfficers] = useState([]);
+  const [viewerAccess, setViewerAccess] = useState({
+    unitId: null,
+    canViewAll: false,
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [transferring, setTransferring] = useState(false);
+  const [transferHistory, setTransferHistory] = useState([]);
+  const [transferError, setTransferError] = useState("");
+  const [transferForm, setTransferForm] = useState({
+    quantity: "",
+    toUnitId: "",
+    toSectorId: "",
+    details: "",
+  });
+  const [error, setError] = useState("");
+  const categoryConfig = useMemo(
+    () => getMaterialBelicoCategoryConfig(item?.category || ""),
+    [item?.category]
+  );
+  const extraFields = useMemo(
+    () => buildMaterialBelicoExtraColumns(item?.category || ""),
+    [item?.category]
+  );
+
+  /* eslint-disable react-hooks/exhaustive-deps */
+  useEffect(() => {
+    const access = readAuthAccess();
+    setViewerAccess(access);
+    void loadUnits(access);
+    void loadSectors();
+    void loadPoliceOfficers();
+    void loadItem();
+    void loadTransferHistory();
+  }, [itemId]);
+  /* eslint-enable react-hooks/exhaustive-deps */
+
+  const availableUnits = useMemo(() => {
+    if (viewerAccess.canViewAll) {
+      return units;
+    }
+    return units.filter((unit) => String(unit.id) === String(viewerAccess.unitId));
+  }, [units, viewerAccess]);
+
+  const unitOptions = useMemo(
+    () => buildHierarchicalUnitOptions(availableUnits),
+    [availableUnits]
+  );
+
+  const availableSectors = useMemo(() => {
+    if (!form.unitId) {
+      return [];
+    }
+    return sectors.filter((sector) => String(sector.unit_id) === String(form.unitId));
+  }, [sectors, form.unitId]);
+
+  const availablePoliceOfficers = useMemo(() => {
+    if (!form.unitId) {
+      return [];
+    }
+    return policeOfficers.filter(
+      (officer) => String(officer.unit_id) === String(form.unitId)
+    );
+  }, [policeOfficers, form.unitId]);
+
+  const selectedOfficer = useMemo(
+    () =>
+      availablePoliceOfficers.find(
+        (officer) => String(officer.id) === String(form.policeOfficerId)
+      ),
+    [availablePoliceOfficers, form.policeOfficerId]
+  );
+
+  const selectedSector = useMemo(
+    () =>
+      availableSectors.find(
+        (sector) => String(sector.id) === String(form.custodySectorId)
+      ),
+    [availableSectors, form.custodySectorId]
+  );
+
+  const availableTransferUnits = useMemo(
+    () =>
+      buildHierarchicalUnitOptions(units).filter(
+        (option) => String(option.id) !== String(item?.unit_id || form.unitId || "")
+      ),
+    [form.unitId, item?.unit_id, units]
+  );
+
+  const availableTransferSectors = useMemo(() => {
+    if (!transferForm.toUnitId) {
+      return [];
+    }
+    return sectors.filter((sector) => String(sector.unit_id) === String(transferForm.toUnitId));
+  }, [sectors, transferForm.toUnitId]);
+
+  const availableTransferBalance = Number(form.quantity || item?.quantity || 0);
+
+  const transferQuantityError = useMemo(() => {
+    if (!transferForm.quantity) {
+      return "";
+    }
+    const quantity = Number(transferForm.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return "Informe uma quantidade maior que zero.";
+    }
+    if (quantity > availableTransferBalance) {
+      return "A quantidade digitada excede o saldo disponível.";
+    }
+    return "";
+  }, [availableTransferBalance, transferForm.quantity]);
+
+  useEffect(() => {
+    if (form.custodyType !== "POLICIAL" && (form.policeOfficerId || form.officerLookup)) {
+      setForm((prev) => ({
+        ...prev,
+        policeOfficerId: "",
+        officerLookup: "",
+      }));
+    }
+  }, [form.custodyType, form.policeOfficerId, form.officerLookup]);
+
+  useEffect(() => {
+    if (form.custodyType !== "SETOR" && form.custodySectorId) {
+      setForm((prev) => ({
+        ...prev,
+        custodySectorId: "",
+      }));
+    }
+  }, [form.custodyType, form.custodySectorId]);
+
+  useEffect(() => {
+    if (
+      form.custodySectorId &&
+      !availableSectors.some((sector) => String(sector.id) === String(form.custodySectorId))
+    ) {
+      setForm((prev) => ({
+        ...prev,
+        custodySectorId: "",
+      }));
+    }
+  }, [availableSectors, form.custodySectorId]);
+
+  useEffect(() => {
+    if (form.cdc_material_type !== "EXOESQUELETO" && form.cdc_exoskeleton_size) {
+      setForm((prev) => ({
+        ...prev,
+        cdc_exoskeleton_size: "",
+      }));
+    }
+  }, [form.cdc_material_type, form.cdc_exoskeleton_size]);
+
+  useEffect(() => {
+    if (String(form.item_model || "").trim().toUpperCase() !== "OUTROS" && form.item_model_other) {
+      setForm((prev) => ({
+        ...prev,
+        item_model_other: "",
+      }));
+    }
+  }, [form.item_model, form.item_model_other]);
+
+  useEffect(() => {
+    if (String(form.item_holder || "").trim().toUpperCase() !== "CONCESSIONARIA" && form.item_holder_other) {
+      setForm((prev) => ({
+        ...prev,
+        item_holder_other: "",
+      }));
+    }
+  }, [form.item_holder, form.item_holder_other]);
+
+  useEffect(() => {
+    if (form.policeOfficerId && !selectedOfficer) {
+      setForm((prev) => ({
+        ...prev,
+        policeOfficerId: "",
+        officerLookup: "",
+      }));
+    }
+  }, [form.policeOfficerId, selectedOfficer]);
+
+  const handleChange = (field) => (event) => {
+    const value = event.target.value;
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleDateChange = (field) => (event) => {
+    setForm((prev) => ({ ...prev, [field]: maskDate(event.target.value) }));
+  };
+
+  const handleDateBlur = (field, label) => () => {
+    setForm((prev) => {
+      const value = prev[field];
+      if (!value) {
+        return prev;
+      }
+      if (toIsoDate(value)) {
+        return prev;
+      }
+      setError(`Informe uma data válida para ${label} no formato DD/MM/AAAA.`);
+      return { ...prev, [field]: "" };
+    });
+  };
+
+  const handleTransferChange = (field) => (event) => {
+    const value = event.target.value;
+    setTransferError("");
+    setTransferForm((prev) => {
+      if (field === "toUnitId") {
+        return {
+          ...prev,
+          toUnitId: value,
+          toSectorId: "",
+        };
+      }
+      return {
+        ...prev,
+        [field]: value,
+      };
+    });
+  };
+
+  const openTransferModal = () => {
+    setTransferError("");
+    setTransferForm({
+      quantity: "",
+      toUnitId: "",
+      toSectorId: "",
+      details: "",
+    });
+    setTransferModalOpen(true);
+  };
+
+  const closeTransferModal = () => {
+    if (transferring) return;
+    setTransferModalOpen(false);
+    setTransferError("");
+  };
+
+  const validateTransferForm = () => {
+    const quantity = Number(transferForm.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return "Informe uma quantidade maior que zero.";
+    }
+    if (quantity > availableTransferBalance) {
+      return "A quantidade transferida não pode exceder o saldo disponível.";
+    }
+    if (!transferForm.toUnitId) {
+      return "Selecione a unidade de destino.";
+    }
+    if (String(transferForm.toUnitId) === String(item?.unit_id || form.unitId)) {
+      return "Selecione uma unidade de destino diferente da origem.";
+    }
+    return "";
+  };
+
+  const handleTransferSubmit = async (event) => {
+    event.preventDefault();
+    const validationError = validateTransferForm();
+    if (validationError) {
+      setTransferError(validationError);
+      return;
+    }
+
+    try {
+      setTransferring(true);
+      setTransferError("");
+      await transferMaterialBelico(itemId, {
+        quantity: Number(transferForm.quantity),
+        to_unit_id: Number(transferForm.toUnitId),
+        to_custody_sector_id: transferForm.toSectorId ? Number(transferForm.toSectorId) : null,
+        details: transferForm.details.trim() || null,
+      });
+
+      closeTransferModal();
+      await Promise.all([loadItem(), loadTransferHistory()]);
+    } catch (transferRequestError) {
+      setTransferError(
+        transferRequestError instanceof Error
+          ? transferRequestError.message
+          : "Erro ao transferir munição"
+      );
+    } finally {
+      setTransferring(false);
+    }
+  };
+
+  const handleOfficerLookupChange = (event) => {
+    const value = event.target.value;
+    setForm((prev) => ({
+      ...prev,
+      officerLookup: value,
+      policeOfficerId: "",
+    }));
+  };
+
+  const handleOfficerSearch = () => {
+    const matchedOfficer = findOfficerByLookup(
+      availablePoliceOfficers,
+      form.officerLookup
+    );
+
+    if (!matchedOfficer) {
+      setError("Policial não encontrado para a unidade selecionada.");
+      setForm((prev) => ({
+        ...prev,
+        policeOfficerId: "",
+      }));
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      officerLookup: buildOfficerOptionLabel(matchedOfficer),
+      policeOfficerId: String(matchedOfficer.id),
+    }));
+  };
+
+  async function loadUnits(access) {
+    try {
+      const activeUnits = await getUnits();
+      setUnits(activeUnits);
+      if (!access.canViewAll && access.unitId) {
+        setForm((prev) => ({
+          ...prev,
+          unitId: String(access.unitId),
+        }));
+      }
+    } catch (error) {
+      setError(error.message || "Erro ao carregar unidades");
+    }
+  }
+
+  async function loadSectors() {
+    try {
+      setSectors(await getSectors());
+    } catch (error) {
+      setError(error.message || "Erro ao carregar setores");
+    }
+  }
+
+  async function loadPoliceOfficers() {
+    try {
+      setPoliceOfficers(await getPoliceOfficers());
+    } catch (error) {
+      setError(error.message || "Erro ao carregar policiais");
+    }
+  }
+
+  async function loadItem() {
+    try {
+      setError("");
+      const data = await getMaterialBelicoById(itemId);
+
+      setItem(data);
+      setForm({
+        numeroSerie: resolvePrimarySerial(data) || "",
+        patrimonio: resolvePrimaryAsset(data) || "",
+        unitId: data.unit_id ? String(data.unit_id) : "",
+        custodyType: data.custody_type || "RESERVA_UNIDADE",
+        custodySectorId: data.custody_sector_id ? String(data.custody_sector_id) : "",
+        status: data.is_active ? "Ativo" : "Inativo",
+        officerLookup:
+          data.assigned_officer_re || data.assigned_officer_name
+            ? buildOfficerSummary(data)
+            : "",
+        policeOfficerId: data.police_officer_id ? String(data.police_officer_id) : "",
+        ...buildMaterialBelicoFieldState(data),
+      });
+    } catch (error) {
+      setError(error.message || "Erro ao carregar material");
+      onBack();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadTransferHistory() {
+    try {
+      const data = await getMaterialBelicoTransferHistory(itemId);
+      setTransferHistory(Array.isArray(data) ? data : []);
+    } catch (historyError) {
+      setTransferHistory([]);
+      console.error("Erro ao carregar histórico de transferências:", historyError);
+    }
+  }
+
+  const handleSave = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+
+    try {
+      if (form.custodyType === "POLICIAL" && !selectedOfficer) {
+        throw new Error("Selecione o policial responsável pelo material.");
+      }
+      if (form.custodyType === "SETOR" && !selectedSector) {
+        throw new Error("Selecione o setor responsável pelo material.");
+      }
+
+            await updateMaterialBelico(
+        itemId,
+        buildMaterialBelicoUpdatePayload({
+          item,
+          form,
+          officer: selectedOfficer,
+          sector: selectedSector,
+        })
+      );
+
+      onBack();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setError(message || "Erro de conexao");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const renderExtraField = (field) => {
+    const visible = isMaterialBelicoFieldVisible(field, form);
+
+    return (
+      <div
+        key={field.key}
+        style={{
+          ...styles.field,
+          overflow: "hidden",
+          maxHeight: visible ? "160px" : "0",
+          opacity: visible ? 1 : 0,
+          transform: visible ? "translateY(0)" : "translateY(-6px)",
+          transition: "max-height 220ms ease, opacity 220ms ease, transform 220ms ease",
+          padding: visible ? undefined : 0,
+          margin: visible ? undefined : 0,
+          pointerEvents: visible ? "auto" : "none",
+        }}
+      >
+        <label style={styles.label}>{field.label}</label>
+        {field.type === "select" ? (
+          <select
+            value={form[field.key] || ""}
+            onChange={handleChange(field.key)}
+            style={styles.input}
+            required={visible && isMaterialBelicoFieldRequired(field, form)}
+          >
+            <option value="">Selecione</option>
+            {field.options.map((option) => (
+              <option
+                key={typeof option === "string" ? option : option.value}
+                value={typeof option === "string" ? option : option.value}
+              >
+                {typeof option === "string" ? option : option.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type={field.type === "number" ? "number" : "text"}
+            value={form[field.key] || ""}
+            onChange={
+              field.type === "date"
+                ? handleDateChange(field.key)
+                : handleChange(field.key)
+            }
+            onBlur={
+              field.type === "date"
+                ? handleDateBlur(field.key, field.label)
+                : undefined
+            }
+            inputMode={field.type === "date" ? dateInputProps.inputMode : undefined}
+            maxLength={field.type === "date" ? dateInputProps.maxLength : undefined}
+            placeholder={
+              field.type === "date"
+                ? dateInputProps.placeholder
+                : field.placeholder || ""
+            }
+            style={styles.input}
+            required={visible && isMaterialBelicoFieldRequired(field, form)}
+          />
+        )}
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.loadingCard}>
+          Carregando material bélico e organizando os dados para edição...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.page}>
+      <section style={styles.hero}>
+        <h1 style={styles.title}>Editar material bélico</h1>
+        <p style={styles.subtitle}>
+          Atualize os dados principais do registro selecionado.
+        </p>
+
+        <div style={styles.actions}>
+          <button
+            onClick={onBack}
+            style={{ ...styles.button, ...styles.secondaryButton }}
+          >
+            Voltar
+          </button>
+        </div>
+      </section>
+
+      {error && <div style={styles.errorBox}>{error}</div>}
+
+      <form onSubmit={handleSave} style={styles.card}>
+        <h2 style={styles.sectionTitle}>Dados do registro</h2>
+        <p style={styles.sectionText}>
+          Ajuste número de série, patrimônio, unidade, responsabilidade e status do material.
+        </p>
+
+        <div style={styles.infoBox}>
+          Esta tela atualiza o responsável atual e os dados principais do material
+          bélico, preservando o fluxo operacional do módulo.
+        </div>
+
+        {item?.category === "Material de CDC" && (
+          <div style={styles.infoBox}>
+            Material selecionado:{" "}
+            {buildCdcMaterialLabel(
+              form.cdc_material_type,
+              form.cdc_exoskeleton_size
+            )}
+          </div>
+        )}
+
+        <div style={styles.formGrid}>
+          <div style={styles.field}>
+            <label style={styles.label}>Nome do Material</label>
+            <input
+              type="text"
+              value={form.item_name}
+              onChange={handleChange("item_name")}
+              placeholder="Digite o nome do material"
+              style={styles.input}
+              required
+            />
+          </div>
+
+          {categoryConfig.showPrimary && (
+            <div style={styles.field}>
+              <label style={styles.label}>{categoryConfig.primaryLabel}</label>
+              <input
+                type="text"
+                value={form.numeroSerie}
+                onChange={handleChange("numeroSerie")}
+                style={styles.input}
+                required
+              />
+            </div>
+          )}
+
+          {categoryConfig.showAsset && (
+            <div style={styles.field}>
+              <label style={styles.label}>Patrimônio</label>
+              <input
+                type="text"
+                value={form.patrimonio}
+                onChange={handleChange("patrimonio")}
+                style={styles.input}
+                required
+              />
+            </div>
+          )}
+
+          {extraFields.map(renderExtraField)}
+
+          <div style={styles.field}>
+            <label style={styles.label}>Unidade</label>
+            <select
+              value={form.unitId}
+              onChange={handleChange("unitId")}
+              style={styles.input}
+              required
+              disabled={!viewerAccess.canViewAll}
+            >
+              <option value="">Selecione</option>
+              {unitOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>Responsabilidade atual</label>
+            <select
+              value={form.custodyType}
+              onChange={handleChange("custodyType")}
+              style={styles.input}
+            >
+              {custodyOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <small style={{ color: "var(--app-text-muted)", fontSize: "0.88rem" }}>
+              {buildCustodySummary({
+                custodyType: form.custodyType,
+                custodySectorName: selectedSector?.name,
+                policeOfficer: selectedOfficer,
+              })}
+            </small>
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>Status</label>
+            <select
+              value={form.status}
+              onChange={handleChange("status")}
+              style={styles.input}
+            >
+              <option value="Ativo">Ativo</option>
+              <option value="Inativo">Inativo</option>
+            </select>
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>
+                {form.custodyType === "SETOR" ? "Setor responsável" : "Setor"}
+            </label>
+            <select
+              value={form.custodySectorId}
+              onChange={handleChange("custodySectorId")}
+              style={styles.input}
+              disabled={form.custodyType !== "SETOR" || !form.unitId}
+            >
+              <option value="">
+                {form.custodyType === "SETOR" ? "Selecione" : "Não se aplica"}
+              </option>
+              {availableSectors.map((sector) => (
+                <option key={sector.id} value={sector.id}>
+                  {formatSectorLabel(sector)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={styles.fieldFull}>
+            <label style={styles.label}>Policial</label>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <input
+                type="text"
+                value={form.officerLookup}
+                onChange={handleOfficerLookupChange}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleOfficerSearch();
+                  }
+                }}
+                list="material-belico-edit-officers"
+                placeholder="Digite o RE do policial responsável"
+                style={{ ...styles.input, flex: 1 }}
+                required={form.custodyType === "POLICIAL"}
+                disabled={form.custodyType !== "POLICIAL"}
+              />
+              <button
+                type="button"
+                onClick={handleOfficerSearch}
+                disabled={form.custodyType !== "POLICIAL"}
+                style={{ ...styles.button, ...styles.secondaryButton }}
+              >
+                Pesquisar
+              </button>
+            </div>
+            <datalist id="material-belico-edit-officers">
+              {availablePoliceOfficers.map((officer) => (
+                <option key={officer.id} value={buildOfficerOptionLabel(officer)} />
+              ))}
+            </datalist>
+            <small style={{ color: "var(--app-text-muted)", fontSize: "0.88rem" }}>
+              {selectedOfficer
+                ? `Policial selecionado: ${selectedOfficer.rank || "Policial"} - ${buildOfficerSummary(selectedOfficer)}`
+                : form.custodyType === "POLICIAL"
+                  ? "Selecione um policial ativo da unidade para vincular o material."
+                  : "Ative a responsabilidade por policial para pesquisar uma pessoa."}
+            </small>
+          </div>
+        </div>
+
+        <div style={styles.footerActions}>
+          {_isMunicaoCategory(item?.category) && (
+            <button
+              type="button"
+              onClick={openTransferModal}
+              style={{ ...styles.button, ...styles.secondaryButton }}
+            >
+              ⇄ Transferir Munição
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={saving}
+            style={{ ...styles.button, ...styles.primaryButton }}
+          >
+            {saving ? "Salvando..." : "Salvar alterações"}
+          </button>
+        </div>
+      </form>
+
+      {_isMunicaoCategory(item?.category) && (
+        <section style={{ ...styles.card, marginTop: "24px" }}>
+          <h2 style={styles.sectionTitle}>Histórico de Transferências</h2>
+          <p style={styles.sectionText}>
+            Consulte as últimas transferências registradas para este lote de munição.
+          </p>
+
+          {transferHistory.length === 0 ? (
+            <div style={styles.infoBox}>Nenhuma transferência registrada até o momento.</div>
+          ) : (
+            <div style={styles.desktopTableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Data</th>
+                    <th style={styles.th}>Qtd Transferida</th>
+                    <th style={styles.th}>Origem</th>
+                    <th style={styles.th}>Destino</th>
+                    <th style={styles.th}>Usuário</th>
+                    <th style={styles.th}>Obs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transferHistory.map((movement) => (
+                    <tr key={movement.id}>
+                      <td style={styles.td}>{formatDateTime(movement.created_at)}</td>
+                      <td style={styles.td}>{movement.quantity_transferred ?? "-"}</td>
+                      <td style={styles.td}>{movement.from_unit_label || "-"}</td>
+                      <td style={styles.td}>{movement.to_unit_label || "-"}</td>
+                      <td style={styles.td}>{movement.user_name || "-"}</td>
+                      <td style={styles.td}>{movement.details || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {transferModalOpen && _isMunicaoCategory(item?.category) && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(3, 7, 18, 0.58)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+            zIndex: 1200,
+          }}
+        >
+          <div
+            style={{
+              ...styles.card,
+              width: "min(100%, 860px)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <h2 style={styles.sectionTitle}>Transferência de Munição</h2>
+            <p style={styles.sectionText}>
+              Informe a quantidade e o destino para redistribuir o saldo deste lote.
+            </p>
+
+            <div style={styles.infoBox}>
+              <strong>Lote:</strong> {item?.lot_number || item?.municao_lote || "-"}
+              <strong style={{ marginLeft: "12px" }}>Calibre:</strong> {form.item_model || "-"}
+              <strong style={{ marginLeft: "12px" }}>Tipo:</strong> {form.item_type || "-"}
+              <br />
+              <strong>Unidade de Origem:</strong> {item?.unit_label || "-"}
+              <strong style={{ marginLeft: "12px" }}>Saldo disponível:</strong> {availableTransferBalance}
+            </div>
+
+            {(transferError || transferQuantityError) && (
+              <div style={styles.errorBox}>{transferError || transferQuantityError}</div>
+            )}
+
+            <form onSubmit={handleTransferSubmit}>
+              <div style={styles.formGrid}>
+                <div style={styles.field}>
+                  <label style={styles.label}>Quantidade a Transferir</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={transferForm.quantity}
+                    onChange={handleTransferChange("quantity")}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+
+                <div style={styles.field}>
+                  <label style={styles.label}>Unidade de Destino</label>
+                  <select
+                    value={transferForm.toUnitId}
+                    onChange={handleTransferChange("toUnitId")}
+                    style={styles.input}
+                    required
+                  >
+                    <option value="">Selecione</option>
+                    {availableTransferUnits.map((unit) => (
+                      <option key={unit.id} value={unit.id}>
+                        {unit.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={styles.field}>
+                  <label style={styles.label}>Setor Responsável de Destino</label>
+                  <select
+                    value={transferForm.toSectorId}
+                    onChange={handleTransferChange("toSectorId")}
+                    style={styles.input}
+                    disabled={!transferForm.toUnitId}
+                  >
+                    <option value="">Reserva da unidade</option>
+                    {availableTransferSectors.map((sector) => (
+                      <option key={sector.id} value={sector.id}>
+                        {formatSectorLabel(sector)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={styles.fieldFull}>
+                  <label style={styles.label}>Observação</label>
+                  <textarea
+                    value={transferForm.details}
+                    onChange={handleTransferChange("details")}
+                    placeholder="Motivo ou observação da transferência"
+                    style={styles.textarea}
+                  />
+                </div>
+              </div>
+
+              <div style={styles.footerActions}>
+                <button
+                  type="button"
+                  onClick={closeTransferModal}
+                  style={{ ...styles.button, ...styles.secondaryButton }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={transferring || Boolean(transferQuantityError)}
+                  style={{ ...styles.button, ...styles.primaryButton }}
+                >
+                  {transferring ? "Transferindo..." : "Confirmar Transferência"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+function _isMunicaoCategory(category) {
+  const normalized = String(category || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+  return normalized === "municoes" || normalized === "municoes quimicas";
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("pt-BR");
+}
+
+function buildMaterialBelicoUpdatePayload({ item, form, officer, sector }) {
+  const normalizedCaliber = normalizeMaterialBelicoCaliber(form.item_model);
+  const payload = {
+    unit_id: Number(form.unitId),
+    custody_type: form.custodyType,
+    custody_sector_id:
+      form.custodyType === "SETOR" && form.custodySectorId
+        ? Number(form.custodySectorId)
+        : null,
+    police_officer_id:
+      form.custodyType === "POLICIAL" && officer ? officer.id : null,
+    posto_grad: form.custodyType === "POLICIAL" ? officer?.rank || "" : form.custodyType,
+    re:
+      form.custodyType === "POLICIAL"
+        ? officer?.re_with_digit || ""
+        : form.custodyType,
+    nome:
+      form.custodyType === "POLICIAL"
+        ? officer?.full_name || ""
+        : form.custodyType === "SETOR"
+          ? sector?.name || "Setor"
+          : "Reserva da unidade",
+    item_name: form.item_name || null,
+    lot_number: form.lot_number || null,
+    expiration_date: form.expiration_date ? toIsoDate(form.expiration_date) : null,
+    quantity: form.quantity === "" ? null : Number(form.quantity),
+    item_brand: form.item_brand || null,
+    item_model: normalizedCaliber || null,
+    item_model_other:
+      String(form.item_model || "").trim().toUpperCase() === "OUTROS"
+        ? form.item_model_other || null
+        : null,
+    item_type: form.item_type || null,
+    item_gender: form.item_gender || null,
+    item_size: form.item_size || null,
+    item_holder: form.item_holder || null,
+    item_holder_other:
+      String(form.item_holder || "").trim().toUpperCase() === "CONCESSIONARIA"
+        ? form.item_holder_other || null
+        : null,
+    cdc_material_type: form.cdc_material_type || null,
+    cdc_exoskeleton_size:
+      form.cdc_material_type === "EXOESQUELETO"
+        ? form.cdc_exoskeleton_size || null
+        : null,
+    is_active: form.status === "Ativo",
+  };
+
+  if (
+    item.algema_num_serie ||
+    item.algema_patrimonio ||
+    item.category?.toLowerCase().includes("algema")
+  ) {
+    payload.algema_num_serie = form.numeroSerie;
+    payload.algema_patrimonio = form.patrimonio;
+    return payload;
+  }
+
+  if (
+    item.colete_num_serie ||
+    item.colete_patrimonio ||
+    item.category?.toLowerCase().includes("colete")
+  ) {
+    payload.colete_num_serie = form.numeroSerie;
+    payload.colete_patrimonio = form.patrimonio;
+    return payload;
+  }
+
+  if (item.municao_lote || item.category?.toLowerCase().includes("muni")) {
+    payload.municao_lote = form.numeroSerie || form.lot_number || "";
+    return payload;
+  }
+
+  if (item.category?.toLowerCase().includes("tonfa")) {
+    payload.lot_number = form.lot_number || form.numeroSerie || "";
+    return payload;
+  }
+
+  payload.armamento_num_serie = form.numeroSerie;
+  payload.armamento_patrimonio = form.patrimonio;
+  return payload;
+}
+
+export default MaterialBelicoEdit;
+

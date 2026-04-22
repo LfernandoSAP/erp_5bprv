@@ -1,0 +1,22 @@
+Reiniciar o back End
+
+powershell -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1
+
+
+testar se subiu
+
+powershell -ExecutionPolicy Bypass -File .\scripts\check-erp.ps1
+
+
+
+ra preencher: Botao Select (15 dias ou 30 dias.   |   Inicio do Gozo |Boletim Interno   
+		
+Se pecunia, aparecer os segintes tex box:
+
+Manter: Nome Completo | RE-DC | Posto/Grad | Unidade
+Mês de Conversão  |  Pecúnia Bol G PM
+
+Abaixo, crie o botão: inserir 2° Bloco e assim suscessivamente.
+
+
+

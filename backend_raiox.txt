@@ -1,0 +1,1347 @@
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\main.py
+==================================================
+
+import os
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.db.database import Base, engine
+
+load_dotenv()
+
+# importar models (garante mapeamento)
+from app.models.unit import Unit  # noqa
+from app.models.user import User  # noqa
+from app.models.category import Category  # noqa
+from app.models.item import Item  # noqa
+from app.models.action_log import ActionLog  # noqa
+from app.models.item_movement import ItemMovement  # noqa
+from app.models.material_belico import MaterialBelico  # noqa
+
+# routers
+from app.routes.auth import router as auth_router
+from app.routes.user import router as user_router
+from app.routes.unit import router as unit_router
+from app.routes.items import router as items_router
+from app.routes.dashboard import router as dashboard_router
+from app.routes.logs import router as logs_router
+from app.routes.item_movement import router as item_movement_router
+from app.routes.material_belico import router as material_belico_router
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Controle de Materiais API", version="1.0.0")
+
+allowed_origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "*")
+if allowed_origins_env.strip() == "*":
+    allowed_origins = ["*"]
+else:
+    allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth_router)
+app.include_router(user_router)
+app.include_router(unit_router)
+app.include_router(items_router)
+app.include_router(dashboard_router)
+app.include_router(logs_router)
+app.include_router(item_movement_router)
+app.include_router(material_belico_router)
+
+@app.get("/")
+def root():
+    return {"status": "online"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\routes\auth.py
+==================================================
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.security import verify_password, get_password_hash, create_access_token
+from app.db.deps import get_db
+from app.models.user import User
+from app.models.unit import Unit
+
+router = APIRouter(prefix="/auth", tags=["Auth"])
+
+@router.post("/login")
+def login(payload: dict, db: Session = Depends(get_db)):
+    cpf = payload.get("cpf")
+    password = payload.get("password")
+    if not cpf or not password:
+        raise HTTPException(status_code=400, detail="cpf and password are required")
+
+    user = db.query(User).filter(User.cpf == str(cpf)).first()
+    if not user or not verify_password(password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid cpf or password.")
+
+    token = create_access_token({"sub": str(user.id), "unit_id": user.unit_id, "is_admin": user.is_admin})
+    return {"access_token": token, "token_type": "bearer"}
+
+@router.post("/bootstrap-admin")
+def bootstrap_admin(payload: dict, db: Session = Depends(get_db)):
+    # só permite se não existir nenhum usuário
+    if db.query(User).count() > 0:
+        raise HTTPException(status_code=403, detail="Bootstrap disabled after first user is created.")
+
+    # exige unit existir
+    unit_id = payload.get("unit_id")
+    if not unit_id or not db.query(Unit).filter(Unit.id == int(unit_id)).first():
+        raise HTTPException(status_code=400, detail="unit_id not found.")
+
+    user = User(
+        cpf=str(payload.get("cpf")),
+        name=str(payload.get("name")),
+        re=str(payload.get("re", "")) or None,
+        rank=str(payload.get("rank", "")) or None,
+        unit_id=int(unit_id),
+        password_hash=get_password_hash(str(payload.get("password"))),
+        is_admin=True,
+        is_active=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"id": user.id, "cpf": user.cpf, "name": user.name, "unit_id": user.unit_id, "is_admin": user.is_admin}
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\routes\dashboard.py
+==================================================
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
+from app.core.auth import get_current_user
+from app.db.deps import get_db
+from app.models.item import Item
+from app.models.user import User
+from app.models.unit import Unit
+
+router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+
+
+@router.get("/summary")
+def dashboard_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    item_query = db.query(Item)
+
+    # se não for admin, limita à unidade do usuário
+    if not current_user.is_admin:
+        item_query = item_query.filter(Item.unit_id == current_user.unit_id)
+
+    total_items = item_query.count()
+    active_items = item_query.filter(Item.is_active == True).count()  # noqa
+    inactive_items = item_query.filter(Item.is_active == False).count()  # noqa
+
+    by_status = (
+        item_query.with_entities(Item.status, func.count(Item.id))
+        .group_by(Item.status)
+        .all()
+    )
+
+    by_category = (
+        item_query.with_entities(Item.category, func.count(Item.id))
+        .group_by(Item.category)
+        .all()
+    )
+
+    by_unit = (
+        db.query(Unit.name, func.count(Item.id))
+        .join(Item, Item.unit_id == Unit.id)
+        .group_by(Unit.name)
+        .all()
+    )
+
+    return {
+        "total_items": total_items,
+        "active_items": active_items,
+        "inactive_items": inactive_items,
+        "by_status": [{"status": s, "count": c} for s, c in by_status],
+        "by_category": [{"category": c if c else "Sem categoria", "count": n} for c, n in by_category],
+        "by_unit": [{"unit": u, "count": c} for u, c in by_unit],
+    }
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\routes\items.py
+==================================================
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_
+
+from app.core.auth import get_current_user
+from app.db.deps import get_db
+from app.models.item import Item
+from app.models.user import User
+from app.models.action_log import ActionLog
+from app.schemas.item import ItemCreate, ItemOut, ItemUpdate
+
+router = APIRouter(prefix="/items", tags=["Items"])
+
+
+def _ensure_scope(current_user: User, item: Item):
+    if not current_user.is_admin and item.unit_id != current_user.unit_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden"
+        )
+
+
+@router.get("/", response_model=List[ItemOut])
+def list_items(
+    include_inactive: bool = False,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    q = db.query(Item)
+
+    if not current_user.is_admin:
+        q = q.filter(Item.unit_id == current_user.unit_id)
+
+    if not include_inactive:
+        q = q.filter(Item.is_active == True)  # noqa
+
+    return q.order_by(Item.id.desc()).all()
+
+
+@router.get("/search", response_model=List[ItemOut])
+def search_items(
+    q: str,
+    include_inactive: bool = False,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = db.query(Item)
+
+    if not current_user.is_admin:
+        query = query.filter(Item.unit_id == current_user.unit_id)
+
+    if not include_inactive:
+        query = query.filter(Item.is_active == True)  # noqa
+
+    term = f"%{q.strip()}%"
+
+    query = query.filter(
+        or_(
+            Item.name.ilike(term),
+            Item.category.ilike(term),
+            Item.description.ilike(term),
+            Item.serial_number.ilike(term),
+            Item.asset_tag.ilike(term),
+            Item.location.ilike(term),
+            Item.notes.ilike(term),
+        )
+    )
+
+    return query.order_by(Item.id.desc()).all()
+
+
+@router.post("/", response_model=ItemOut, status_code=201)
+def create_item(
+    payload: ItemCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    unit_id = current_user.unit_id
+
+    if current_user.is_admin and getattr(payload, "unit_id", None):
+        unit_id = payload.unit_id
+
+    item = Item(
+        unit_id=unit_id,
+        name=payload.name,
+        category=payload.category,
+        description=payload.description,
+        serial_number=payload.serial_number,
+        asset_tag=payload.asset_tag,
+        status=payload.status,
+        value=payload.value,
+        location=payload.location,
+        notes=payload.notes,
+        is_active=True,
+    )
+
+    try:
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+
+        log = ActionLog(
+            item_id=item.id,
+            user_id=current_user.id,
+            action="CREATE",
+            details=f"Item criado: {item.name}"
+        )
+        db.add(log)
+        db.commit()
+
+        return item
+
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Número de série já cadastrado."
+        )
+
+
+@router.get("/{item_id}", response_model=ItemOut)
+def get_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    _ensure_scope(current_user, item)
+
+    return item
+
+
+@router.put("/{item_id}", response_model=ItemOut)
+def update_item(
+    item_id: int,
+    payload: ItemUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    _ensure_scope(current_user, item)
+
+    for k, v in payload.model_dump(exclude_unset=True).items():
+        setattr(item, k, v)
+
+    db.commit()
+    db.refresh(item)
+
+    log = ActionLog(
+        item_id=item.id,
+        user_id=current_user.id,
+        action="UPDATE",
+        details=f"Item editado: {item.name}"
+    )
+    db.add(log)
+    db.commit()
+
+    return item
+
+
+@router.delete("/{item_id}", status_code=204)
+def delete_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    _ensure_scope(current_user, item)
+
+    item.is_active = False
+    db.commit()
+
+    log = ActionLog(
+        item_id=item.id,
+        user_id=current_user.id,
+        action="DELETE",
+        details=f"Item inativado: {item.name}"
+    )
+    db.add(log)
+    db.commit()
+
+    return
+
+
+@router.put("/{item_id}/restore", response_model=ItemOut)
+def restore_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    _ensure_scope(current_user, item)
+
+    item.is_active = True
+    db.commit()
+    db.refresh(item)
+
+    log = ActionLog(
+        item_id=item.id,
+        user_id=current_user.id,
+        action="RESTORE",
+        details=f"Item restaurado: {item.name}"
+    )
+    db.add(log)
+    db.commit()
+
+    return item
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\routes\item_movement.py
+==================================================
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.auth import get_current_user
+from app.db.deps import get_db
+from app.models.item import Item
+from app.models.item_movement import ItemMovement
+from app.models.user import User
+from app.models.action_log import ActionLog
+from app.schemas.item_movement import ItemMovementCreate, ItemMovementOut
+
+
+router = APIRouter(
+    prefix="/movements",
+    tags=["Movements"]
+)
+
+
+@router.get("/", response_model=list[ItemMovementOut])
+def list_movements(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    query = db.query(ItemMovement).order_by(ItemMovement.id.desc())
+
+    if not current_user.is_admin:
+        query = query.filter(ItemMovement.user_id == current_user.id)
+
+    return query.all()
+
+
+@router.post("/", response_model=ItemMovementOut, status_code=201)
+def create_movement(
+    payload: ItemMovementCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    item = db.query(Item).filter(Item.id == payload.item_id).first()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Item não encontrado")
+
+    if not current_user.is_admin and item.unit_id != current_user.unit_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden"
+        )
+
+    movement = ItemMovement(
+        item_id=payload.item_id,
+        user_id=current_user.id,
+        movement_type=payload.movement_type,
+        from_location=payload.from_location,
+        to_location=payload.to_location,
+        details=payload.details
+    )
+
+    db.add(movement)
+
+    if payload.to_location:
+        item.location = payload.to_location
+
+    log = ActionLog(
+        item_id=item.id,
+        user_id=current_user.id,
+        action="MOVEMENT",
+        details=f"{payload.movement_type} de {payload.from_location} para {payload.to_location}"
+    )
+
+    db.add(log)
+
+    db.commit()
+    db.refresh(movement)
+
+    return movement
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\routes\logs.py
+==================================================
+from typing import List
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core.auth import get_current_user
+from app.db.deps import get_db
+from app.models.action_log import ActionLog
+from app.models.user import User
+
+router = APIRouter(prefix="/logs", tags=["Logs"])
+
+
+@router.get("/")
+def list_logs(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = db.query(ActionLog).order_by(ActionLog.id.desc())
+
+    if not current_user.is_admin:
+        query = query.filter(ActionLog.user_id == current_user.id)
+
+    logs = query.all()
+
+    result = []
+    for log in logs:
+        result.append({
+            "id": log.id,
+            "item_id": log.item_id,
+            "user_id": log.user_id,
+            "action": log.action,
+            "details": log.details,
+            "created_at": log.created_at,
+        })
+
+    return result
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\routes\material_belico.py
+==================================================
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+
+from app.core.auth import get_current_user
+from app.db.deps import get_db
+from app.models.material_belico import MaterialBelico
+from app.models.user import User
+from app.schemas.material_belico import MaterialBelicoCreate, MaterialBelicoOut, MaterialBelicoUpdate
+from app.utils.scope import apply_unit_scope
+
+router = APIRouter(prefix="/material-belico", tags=["Material Bélico"])
+
+
+@router.get("/", response_model=List[MaterialBelicoOut])
+def list_material_belico(
+    category: str | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    include_inactive: bool = False
+):
+    q = db.query(MaterialBelico)
+    q = apply_unit_scope(q, MaterialBelico, current_user)
+    if category:
+        q = q.filter(MaterialBelico.category == category)
+    if not include_inactive:
+        q = q.filter(MaterialBelico.is_active)
+    return q.order_by(MaterialBelico.ordem.asc()).all()
+
+
+@router.post("/", response_model=MaterialBelicoOut, status_code=201)
+def create_material_belico(
+    payload: MaterialBelicoCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    unit_id = payload.unit_id
+    if not current_user.is_admin and not getattr(current_user.unit, "can_view_all", False):
+        unit_id = current_user.unit_id
+
+    item = MaterialBelico(
+        unit_id=unit_id,
+        category=payload.category,
+        ordem=payload.ordem,
+        posto_grad=payload.posto_grad,
+        re=payload.re,
+        nome=payload.nome,
+        cia_em=payload.cia_em,
+        opm_atual=payload.opm_atual,
+        armamento_num_serie=payload.armamento_num_serie,
+        armamento_patrimonio=payload.armamento_patrimonio,
+        municao_lote=payload.municao_lote,
+        algema_num_serie=payload.algema_num_serie,
+        algema_patrimonio=payload.algema_patrimonio,
+        colete_num_serie=payload.colete_num_serie,
+        colete_patrimonio=payload.colete_patrimonio,
+        is_active=payload.is_active,
+    )
+    try:
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+        return item
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Erro ao cadastrar material bélico")
+
+
+@router.get("/controle-geral", response_model=List[MaterialBelicoOut])
+def list_material_belico_controle_geral(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    include_inactive: bool = False
+):
+    q = db.query(MaterialBelico)
+    q = apply_unit_scope(q, MaterialBelico, current_user)
+    if not include_inactive:
+        q = q.filter(MaterialBelico.is_active)
+    return q.order_by(MaterialBelico.ordem.asc()).all()
+
+
+@router.post("/controle-geral", response_model=MaterialBelicoOut, status_code=201)
+def create_material_belico_controle_geral(
+    payload: MaterialBelicoCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    unit_id = payload.unit_id
+    if not current_user.is_admin and not getattr(current_user.unit, "can_view_all", False):
+        unit_id = current_user.unit_id
+
+    item = MaterialBelico(
+        unit_id=unit_id,
+        category=payload.category,
+        ordem=payload.ordem,
+        posto_grad=payload.posto_grad,
+        re=payload.re,
+        nome=payload.nome,
+        cia_em=payload.cia_em,
+        opm_atual=payload.opm_atual,
+        armamento_num_serie=payload.armamento_num_serie,
+        armamento_patrimonio=payload.armamento_patrimonio,
+        municao_lote=payload.municao_lote,
+        algema_num_serie=payload.algema_num_serie,
+        algema_patrimonio=payload.algema_patrimonio,
+        colete_num_serie=payload.colete_num_serie,
+        colete_patrimonio=payload.colete_patrimonio,
+        is_active=payload.is_active,
+    )
+    try:
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+        return item
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Erro ao cadastrar material bélico")
+
+
+@router.get("/{item_id}", response_model=MaterialBelicoOut)
+def get_material_belico(item_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    item = db.query(MaterialBelico).filter(MaterialBelico.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    if not current_user.is_admin and item.unit_id != current_user.unit_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    return item
+
+
+@router.put("/{item_id}", response_model=MaterialBelicoOut)
+def update_material_belico(item_id: int, payload: MaterialBelicoUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    item = db.query(MaterialBelico).filter(MaterialBelico.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    if not current_user.is_admin and item.unit_id != current_user.unit_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    for k, v in payload.model_dump(exclude_unset=True).items():
+        if k == "unit_id" and not current_user.is_admin:
+            continue
+        setattr(item, k, v)
+
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.delete("/{item_id}", status_code=204)
+def delete_material_belico(item_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    item = db.query(MaterialBelico).filter(MaterialBelico.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    if not current_user.is_admin and item.unit_id != current_user.unit_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    item.is_active = False
+    db.commit()
+    return
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\routes\unit.py
+==================================================
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.auth import get_current_user
+from app.db.deps import get_db
+from app.models.unit import Unit
+from app.models.user import User
+from app.schemas.unit import UnitCreate, UnitOut, UnitTree
+
+router = APIRouter(prefix="/units", tags=["Units"])
+
+@router.post("/", response_model=UnitOut, status_code=201)
+def create_unit(payload: UnitCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    if payload.parent_id is not None:
+        parent = db.query(Unit).filter(Unit.id == payload.parent_id).first()
+        if not parent:
+            raise HTTPException(status_code=400, detail="parent_id not found.")
+
+    u = Unit(name=payload.name, parent_id=payload.parent_id)
+    db.add(u)
+    db.commit()
+    db.refresh(u)
+    return u
+
+@router.get("/", response_model=list[UnitOut])
+def list_units(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(Unit).order_by(Unit.id).all()
+
+def _build_tree(node: Unit) -> UnitTree:
+    return UnitTree(
+        id=node.id,
+        name=node.name,
+        parent_id=node.parent_id,
+        created_at=node.created_at,
+        updated_at=node.updated_at,
+        children=[_build_tree(c) for c in (node.children or [])],
+    )
+
+@router.get("/tree/root", response_model=list[UnitTree])
+def get_unit_tree(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    roots = db.query(Unit).filter(Unit.parent_id.is_(None)).order_by(Unit.id).all()
+    return [_build_tree(r) for r in roots]
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\routes\user.py
+==================================================
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+
+from app.core.auth import get_current_user
+from app.core.security import get_password_hash
+from app.db.deps import get_db
+from app.models.user import User
+from app.models.unit import Unit
+from app.schemas.user import UserOut, UserCreate
+
+router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@router.get("/", response_model=list[UserOut])
+def list_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user.is_admin:
+        return [current_user]
+    return db.query(User).order_by(User.id).all()
+
+
+@router.post("/", response_model=UserOut, status_code=201)
+def create_user(
+    payload: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas administradores podem criar usuários."
+        )
+
+    unit = db.query(Unit).filter(Unit.id == payload.unit_id).first()
+    if not unit:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unidade informada não encontrada."
+        )
+
+    new_user = User(
+        cpf=payload.cpf,
+        name=payload.name,
+        re=payload.re,
+        rank=payload.rank,
+        unit_id=payload.unit_id,
+        password_hash=get_password_hash(payload.password),
+        is_admin=payload.is_admin,
+        is_active=payload.is_active,
+    )
+
+    try:
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return new_user
+
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CPF já cadastrado."
+        )
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\routes\__init__.py
+==================================================
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\models\action_log.py
+==================================================
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
+from sqlalchemy.orm import relationship
+
+from app.db.database import Base
+
+
+class ActionLog(Base):
+    __tablename__ = "action_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    item_id = Column(Integer, ForeignKey("items.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+
+    action = Column(String(50), nullable=False)
+    details = Column(String(255), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    item = relationship("Item")
+    user = relationship("User")
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\models\category.py
+==================================================
+from sqlalchemy import Column, Integer, String, DateTime, func
+from app.db.database import Base
+
+class Category(Base):
+    __tablename__ = "categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), unique=True, nullable=False, index=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\models\item.py
+==================================================
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, func, Numeric
+from sqlalchemy.orm import relationship
+
+from app.db.database import Base
+
+class Item(Base):
+    __tablename__ = "items"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    unit_id = Column(Integer, ForeignKey("units.id"), nullable=False, index=True)
+
+    name = Column(String(200), nullable=False, index=True)
+    category = Column(String(100), nullable=True, index=True)
+    description = Column(String(500), nullable=True)
+    serial_number = Column(String, unique=True, index=True)
+
+    asset_tag = Column(String(120), nullable=True, index=True)
+    status = Column(String(30), nullable=False, default="EM_USO")
+    value = Column(Numeric(12, 2), nullable=True)
+    location = Column(String(200), nullable=True)
+    notes = Column(String(500), nullable=True)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+
+    unit = relationship("Unit")
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\models\item_movement.py
+==================================================
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
+from sqlalchemy.orm import relationship
+
+from app.db.database import Base
+
+
+class ItemMovement(Base):
+    __tablename__ = "item_movements"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    item_id = Column(Integer, ForeignKey("items.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+
+    movement_type = Column(String(30), nullable=False)
+    from_location = Column(String(200), nullable=True)
+    to_location = Column(String(200), nullable=True)
+    details = Column(String(500), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    item = relationship("Item")
+    user = relationship("User")
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\models\material_belico.py
+==================================================
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, func
+from sqlalchemy.orm import relationship
+
+from app.db.database import Base
+
+
+class MaterialBelico(Base):
+    __tablename__ = "material_belico"
+
+    id = Column(Integer, primary_key=True, index=True)
+    unit_id = Column(Integer, ForeignKey("units.id"), nullable=False, index=True)
+
+    ordem = Column(Integer, nullable=False)
+    posto_grad = Column(String(100), nullable=False)
+    re = Column(String(50), nullable=False)
+    nome = Column(String(200), nullable=False)
+    cia_em = Column(String(50), nullable=False)
+    opm_atual = Column(String(50), nullable=False)
+
+    armamento_num_serie = Column(String(100), nullable=True)
+    armamento_patrimonio = Column(String(100), nullable=True)
+    municao_lote = Column(String(100), nullable=True)
+
+    algema_num_serie = Column(String(100), nullable=True)
+    algema_patrimonio = Column(String(100), nullable=True)
+
+    category = Column(String(100), nullable=False, index=True, default="")
+    colete_num_serie = Column(String(100), nullable=True)
+    colete_patrimonio = Column(String(100), nullable=True)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+
+    unit = relationship("Unit")
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\models\unit.py
+==================================================
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
+from sqlalchemy.orm import relationship
+
+from app.db.database import Base
+
+class Unit(Base):
+    __tablename__ = "units"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), nullable=False, index=True)
+    parent_id = Column(Integer, ForeignKey("units.id"), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+
+    parent = relationship("Unit", remote_side=[id], backref="children")
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\models\user.py
+==================================================
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, func
+from sqlalchemy.orm import relationship
+
+from app.db.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    cpf = Column(String(20), unique=True, nullable=False, index=True)
+    name = Column(String(200), nullable=False)
+    re = Column(String(50), nullable=True)
+    rank = Column(String(50), nullable=True)
+
+    unit_id = Column(Integer, ForeignKey("units.id"), nullable=False, index=True)
+    unit = relationship("Unit")
+
+    password_hash = Column(String(255), nullable=False)
+
+    is_admin = Column(Boolean, default=False, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\models\__init__.py
+==================================================
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\schemas\item.py
+==================================================
+from __future__ import annotations
+
+from datetime import datetime
+from enum import Enum
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
+
+
+class ItemStatus(str, Enum):
+    EM_USO = "EM_USO"
+    EM_ESTOQUE = "EM_ESTOQUE"
+    MANUTENCAO = "MANUTENCAO"
+    BAIXADO = "BAIXADO"
+
+
+class ItemBase(BaseModel):
+    name: str
+    category: Optional[str] = None
+    description: Optional[str] = None
+    serial_number: Optional[str] = None
+    asset_tag: Optional[str] = None
+    status: ItemStatus = ItemStatus.EM_USO
+    value: float = 0
+    location: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ItemCreate(ItemBase):
+    unit_id: Optional[int] = None
+
+
+class ItemUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    serial_number: Optional[str] = None
+    asset_tag: Optional[str] = None
+    status: Optional[ItemStatus] = None
+    value: Optional[float] = None
+    location: Optional[str] = None
+    notes: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class ItemOut(ItemBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    unit_id: int
+    is_active: bool
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\schemas\item_movement.py
+==================================================
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict
+
+
+class ItemMovementBase(BaseModel):
+    item_id: int
+    movement_type: str
+    from_location: str | None = None
+    to_location: str | None = None
+    details: str | None = None
+
+
+class ItemMovementCreate(ItemMovementBase):
+    pass
+
+
+class ItemMovementOut(ItemMovementBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    created_at: datetime
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\schemas\material_belico.py
+==================================================
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
+
+
+class MaterialBelicoBase(BaseModel):
+    unit_id: int
+    category: str
+    ordem: int
+    posto_grad: str
+    re: str
+    nome: str
+    cia_em: str
+    opm_atual: str
+    armamento_num_serie: Optional[str] = None
+    armamento_patrimonio: Optional[str] = None
+    municao_lote: Optional[str] = None
+    algema_num_serie: Optional[str] = None
+    algema_patrimonio: Optional[str] = None
+    colete_num_serie: Optional[str] = None
+    colete_patrimonio: Optional[str] = None
+    is_active: bool = True
+
+
+class MaterialBelicoCreate(MaterialBelicoBase):
+    pass
+
+
+class MaterialBelicoUpdate(BaseModel):
+    ordem: Optional[int] = None
+    posto_grad: Optional[str] = None
+    re: Optional[str] = None
+    nome: Optional[str] = None
+    cia_em: Optional[str] = None
+    opm_atual: Optional[str] = None
+    armamento_num_serie: Optional[str] = None
+    armamento_patrimonio: Optional[str] = None
+    municao_lote: Optional[str] = None
+    algema_num_serie: Optional[str] = None
+    algema_patrimonio: Optional[str] = None
+    colete_num_serie: Optional[str] = None
+    colete_patrimonio: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class MaterialBelicoOut(MaterialBelicoBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\schemas\unit.py
+==================================================
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict
+from typing import List, Optional
+
+class UnitCreate(BaseModel):
+    name: str
+    parent_id: int | None = None
+
+class UnitOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    parent_id: int | None
+    created_at: datetime
+    updated_at: datetime | None = None
+
+class UnitTree(UnitOut):
+    children: List["UnitTree"] = []
+
+UnitTree.model_rebuild()
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\schemas\user.py
+==================================================
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict
+
+
+class UserBase(BaseModel):
+    cpf: str
+    name: str
+    re: str | None = None
+    rank: str | None = None
+    unit_id: int
+    is_admin: bool = False
+    is_active: bool = True
+
+
+class UserCreate(UserBase):
+    password: str
+
+
+class UserUpdate(BaseModel):
+    name: str | None = None
+    re: str | None = None
+    rank: str | None = None
+    unit_id: int | None = None
+    is_admin: bool | None = None
+    is_active: bool | None = None
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    cpf: str
+    name: str
+    re: str | None = None
+    rank: str | None = None
+    unit_id: int
+    is_admin: bool
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime | None = None
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\schemas\__init__.py
+==================================================
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\core\auth.py
+==================================================
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
+
+from app.core.security import decode_token
+from app.db.deps import get_db
+from app.models.user import User
+
+bearer = HTTPBearer(auto_error=False)
+
+def get_current_user(
+    creds: HTTPAuthorizationCredentials = Depends(bearer),
+    db: Session = Depends(get_db),
+) -> User:
+    if not creds or not creds.credentials:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authenticated")
+
+    token = creds.credentials
+    try:
+        payload = decode_token(token)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
+
+    return user
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\core\security.py
+==================================================
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, Optional
+
+from jose import jwt, JWTError
+from passlib.context import CryptContext
+
+import os
+
+# Em produção, coloque no .env
+SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_ME_SUPER_SECRET")
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60 * 24))  # 24h
+
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+def create_access_token(data: Dict[str, Any], expires_minutes: Optional[int] = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes or ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def decode_token(token: str) -> Dict[str, Any]:
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError as e:
+        raise ValueError("Invalid token") from e
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\core\__init__.py
+==================================================
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\db\database.py
+==================================================
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+import os
+
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./erp5bprv.db")
+
+# Para evitar falha direta ao criar engine, permitir configurações via env
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, future=True)
+else:
+    engine = create_engine(DATABASE_URL, future=True)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
+Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\db\deps.py
+==================================================
+from typing import Generator
+from sqlalchemy.orm import Session
+from app.db.database import SessionLocal
+
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+==================================================
+C:\Users\Telematica\Documents\erp5bprv\backend\app\db\__init__.py
+==================================================
+

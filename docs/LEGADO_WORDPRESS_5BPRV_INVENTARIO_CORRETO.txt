@@ -1,0 +1,861 @@
+INVENTARIO CORRETO DO SITE LEGADO WORDPRESS - 5BPRV
+Novo site institucional Laravel - material de rascunho
+
+Data da analise: 15/04/2026
+
+Fontes corretas analisadas:
+
+- C:\Users\Telematica\Documents\Site 5Rv\BACKUP_ANTES_UPDATE_2026
+- C:\Users\Telematica\Documents\Site 5Rv\backup_5bprv_antes_update.sql
+
+Observacao:
+Este arquivo substitui a leitura anterior feita sobre a pasta errada
+Site5Rv_antigo. O conteudo abaixo vem do backup WordPress correto e do SQL
+real do site antigo.
+
+
+1. VISAO GERAL
+--------------
+O backup correto e de um site WordPress antigo.
+
+Estrutura encontrada:
+
+- plugins
+- themes
+- uploads
+- wp-config.php
+
+Dump SQL encontrado:
+
+- backup_5bprv_antes_update.sql
+- Tamanho aproximado: 6 MB
+- Banco indicado no SQL: 5bprv
+
+URL antiga encontrada no banco:
+
+- https://www9.intranet.policiamilitar.sp.gov.br/unidades/5bprv
+
+
+2. TEMA E PLUGINS
+-----------------
+Temas encontrados:
+
+- kleo_OFF
+- twentyfifteen
+- twentyseventeen
+- twentysixteen
+
+O tema principal do site antigo parece ser o Kleo.
+
+Plugins encontrados com possivel impacto no conteudo antigo:
+
+- elementor
+- js_composer_OFF
+- revslider_OLD
+- tablepress
+- contact-form-7
+- pretty-file-list-pro
+- superfly-menu
+- custom-css-js
+- duplicate-post
+- searchwp_OLD
+- searchwp-live-ajax-search
+- all-in-one-wp-migration
+- all-in-one-wp-migration-unlimited-extension
+
+Observacao:
+O conteudo de paginas antigas usa muitos shortcodes do Visual Composer,
+por exemplo:
+
+- [vc_row]
+- [vc_column]
+- [vc_column_text]
+- [vc_single_image]
+- [rev_slider]
+
+Para o novo Laravel, estes shortcodes nao devem ser reaproveitados como codigo.
+Eles servem apenas para entender a estrutura visual e editorial antiga.
+
+
+3. IDENTIDADE DO SITE
+---------------------
+Informacoes encontradas no SQL:
+
+- Nome do site:
+  5o BPRv
+
+- Rodape institucional:
+  5o Batalhao de Policiamento Rodoviario
+  Rua Antonio Aparecido Ferraz, no 1455
+  Parque Santa Izabel
+  Sorocaba - SP
+  CEP: 18052-280
+  Tel.: (15) 3333-3140
+  E-mail: 5bprv@policiamilitar.sp.gov.br
+
+Outra variacao encontrada:
+
+- Rua Antonio Aparecido Ferraz, no 1455 - Parque Santa Izabel - Sorocaba - SP
+- CEP: 18052-280
+- Tel.: (15) 3333 - 3140
+- e-mail: 5bprv@policiamilitar.sp.gov.br
+
+
+4. REDES SOCIAIS
+----------------
+Redes encontradas no SQL/configuracoes do tema:
+
+- Twitter:
+  https://twitter.com/quintobprvpmesp
+
+- Facebook:
+  https://facebook.com/quintobprvpmespoficial
+
+- Facebook alternativo encontrado no menu Superfly:
+  https://www.facebook.com/profile.php?id=100069079972046
+
+- Instagram:
+  https://www.instagram.com/quintobprvpmesp
+
+- Instagram alternativo com barra final:
+  https://www.instagram.com/quintobprvpmesp/
+
+- YouTube:
+  https://www.youtube.com/quintobprvpmesp
+
+
+5. PAGINAS IMPORTANTES ENCONTRADAS NO SQL
+-----------------------------------------
+O SQL contem paginas publicadas, revisoes e anexos. Algumas paginas antigas
+aparecem como revisoes, mas preservam conteudo importante.
+
+Paginas/conteudos identificados:
+
+- Inicio
+- Comandante
+- Comandantes
+- Eternos Comandantes
+- Historico
+- Quarteis e Bases do Policiamento Rodoviario
+- O Vigilante Rodoviario
+- Boletins Internos
+- PM do Mes
+- Ocorrencia Destaque
+- Gabinete de Treinamento
+- Mapa do CPRv
+- Challenge Coin 5o BPRv
+
+Observacao:
+Nem todos aparecem como pagina publicada atual, mas muitos aparecem nas revisoes
+do WordPress, o que e suficiente para uso como rascunho editorial.
+
+
+6. PAGINA "COMANDANTE"
+----------------------
+Foi encontrada pagina publicada chamada:
+
+- Titulo:
+  Comandante
+
+- Slug:
+  comandante
+
+- Status:
+  publish
+
+- URL antiga:
+  https://www6.intranet.policiamilitar.sp.gov.br/?page_id=23
+
+Comandante atual encontrado na versao mais recente do conteudo:
+
+- Ten Cel PM Julio Teodoro Martins Junior
+
+A pagina contem uma secao:
+
+- Atual Comandante
+- Curriculo do Comandante
+- Eternos Comandantes do 5o Batalhao de Policia Rodoviaria
+
+
+7. CURRICULO DO COMANDANTE
+--------------------------
+Dados encontrados para o Ten Cel PM Julio Teodoro Martins Junior:
+
+Formacao profissional:
+
+- Curso de Formacao de Oficiais - Academia de Policia Militar do Barro Branco
+  APMBB - 1995 a 1998.
+
+- Mestrado Profissional em Ciencias Policiais de Seguranca e Ordem Publica
+  2017.
+
+- Tema do mestrado:
+  Padronizacao do Processo de Locacao de Viaturas no Ambito do Comando de
+  Policiamento Rodoviario - Centro de Altos Estudos de Seguranca (CAES).
+
+Especializacao profissional:
+
+- Curso de Especializacao de Policiamento em Eventos (2001).
+- Curso de Especializacao de Policiamento de Transito Urbano (2006).
+- Curso de Gestao Contemporanea pela Qualidade (2008).
+- Curso de Especializacao em Policia Judiciaria Militar (2010).
+- Curso de Especializacao em Policiamento de Transito Rodoviario (2015).
+
+Formacao externa:
+
+- Bacharel em Direito pela Universidade Cruzeiro do Sul/SP (2010).
+
+Unidades em que serviu:
+
+- Academia de Policia Militar do Barro Branco.
+- 9o Batalhao de Policia Militar Metropolitano.
+- 40o Batalhao de Policia Militar do Interior.
+- 5o Batalhao de Policia Rodoviaria.
+- Comando de Policiamento Rodoviario (CPRv).
+- 6o Batalhao de Policia Rodoviaria.
+
+
+8. OUTROS COMANDANTES CITADOS NAS REVISOES
+------------------------------------------
+As revisoes antigas citam outros comandantes ou versoes anteriores da pagina:
+
+- Ten Cel PM Marcel Ribeiro de Lima
+- Tenente Coronel PM Luodenir Gonzaga Bueno
+- Major PM Mauricio Guerra
+- Hugo Araujo Santos
+
+Tambem ha referencias a:
+
+- Palavras do Comandante
+- Atual Comandante
+- Curriculo do Comandante
+- Eternos Comandantes do 5o Batalhao de Policia Rodoviaria
+
+
+9. ETERNOS COMANDANTES
+----------------------
+Foi encontrada secao chamada:
+
+- Eternos Comandantes do 5o Batalhao de Policia Rodoviaria
+
+Nomes/titulos localizados nos shortcodes de imagem:
+
+- Ten Cel PM Quarterone
+- Ten Cel PM Ramiro
+- Ten Cel PM Cacao
+- Ten Cel PM Marcondes
+- Ten Cel PM Frank
+- Ten Cel PM Michelazzo
+- Ten Cel PM Juliao
+- Ten Cel PM Carvalho
+- Ten Cel PM Infanti
+- Ten Cel PM Menemilton
+- Ten Cel PM Hugo
+- Ten Cel PM Marcel
+
+Observacao:
+O WordPress associa esses nomes a imagens por ID, por exemplo:
+
+- image 1571 - Ten Cel PM Quarterone
+- image 1572 - Ten Cel PM Ramiro
+- image 1561 - Ten Cel PM Cacao
+- image 1568 - Ten Cel PM Marcondes
+- image 1563 - Ten Cel PM Frank
+- image 1570 - Ten Cel PM Michelazzo
+- image 1566 - Ten Cel PM Juliao
+- image 1562 - Ten Cel PM Carvalho
+- image 1565 - Ten Cel PM Infanti
+- image 1569 - Ten Cel PM Menemilton
+- image 1564 - Ten Cel PM Hugo
+- image 1567 - Ten Cel PM Marcel
+
+Para o novo Laravel, vale criar uma secao propria:
+
+- Comandante atual
+- Ex-comandantes
+- Foto
+- Nome
+- Posto/grad.
+- Periodo de comando, se houver fonte oficial
+- Pequena biografia, se houver fonte oficial
+
+
+10. HISTORIA DO POLICIAMENTO RODOVIARIO E DO 5o BPRv
+----------------------------------------------------
+Foi encontrado texto historico dentro de "Palavras do Comandante".
+
+Pontos historicos encontrados:
+
+- Em 10 de janeiro de 1948 foi criada a Policia Rodoviaria em Sao Paulo.
+- Na origem, estava ligada ao Departamento de Estradas de Rodagem - DER.
+- A criacao contou com 60 homens, alguns ex-combatentes da Forca Expedicionaria
+  Brasileira.
+- O grupo inicial era comandado pelo entao Tenente Pina, da Forca Publica.
+- A atuacao inicial foi na recem-inaugurada SP-150, Rodovia Anchieta.
+- Em 1962 passou a ser Corpo de Policiamento Rodoviario, agora da Forca Publica.
+- Em 1973 passou a ser Batalhao de Policiamento Rodoviario da Policia Militar.
+- Em 1977 houve divisao com o 2o Batalhao para a regiao Leste do Estado.
+- Em 1979 houve divisao com o 3o Batalhao para o Norte.
+- Em 1979 foi criado o Comando de Policiamento Rodoviario.
+- Em 1987 surgiu o TOR - Tatico Ostensivo Rodoviario.
+- Em 2004 foi criado o 4o Batalhao de Policia Rodoviaria para o sistema
+  Anhanguera/Bandeirantes.
+- Em 2008 foi criado o 5o Batalhao de Policia Rodoviaria.
+- Em 2019 foi criado o 6o Batalhao de Policia Rodoviaria para cuidar do
+  Rodoanel, Litoral Norte e Vale do Paraiba.
+- O texto cita que a estrutura sempre buscou acompanhar a expansao do sistema
+  rodoviario do Estado de Sao Paulo.
+
+Trecho conceitual importante:
+
+- O 5o BPRv e referido como o "Guardiao das rodovias do sudoeste paulista".
+
+Ideia para o novo Laravel:
+
+- Criar pagina "Historia".
+- Criar uma linha do tempo.
+- Separar "Historia do Policiamento Rodoviario" e "Historia do 5o BPRv".
+- Criar bloco "Guardiao das rodovias do sudoeste paulista".
+
+
+11. O VIGILANTE RODOVIARIO
+--------------------------
+Foi encontrada pagina chamada:
+
+- O Vigilante Rodoviario
+
+Conteudos encontrados:
+
+- A Serie
+- O Ator
+- O Oficial
+- O Legado
+
+Lista de episodios encontrada:
+
+01 - A historia do Lobo
+02 - Os cinco valentes
+03 - O recruta
+04 - Bola de meia
+05 - O ventrilocuo
+06 - Extorsao
+07 - Jogo decisivo
+08 - Panico no ring
+09 - Zuni, o potrinho
+10 - A orquidea glacial
+11 - Remedios falsificados
+12 - Os romeiros
+13 - A reporter
+14 - Diamante Gran Mongol
+15 - O fugitivo
+16 - Aventura em Ouro Preto
+17 - Chantagem
+18 - O homem do realejo
+19 - A eleicao
+20 - A pedreira
+21 - O pagador
+22 - O sosia / O Aventureiro
+23 - Aventuras do Tuca
+24 - O invento
+25 - Terras de ninguem
+26 - O rapto do Juca
+27 - Aventura em Vila Velha
+28 - Pombo-correio
+29 - Ladroes de automoveis
+30 - O suspeito
+
+Informacoes sobre Carlos Miranda:
+
+- Ator do primeiro seriado produzido especialmente para televisao em toda a
+  America Latina.
+- Nascido em Sao Paulo, capital, em 29 de julho de 1933.
+- Apos o termino da serie em 1962, foi convidado pelo entao Comandante Geral da
+  Forca Publica General de Exercito Joao Franco Pontes para ingressar na carreira
+  policial.
+- Para interpretar o personagem do Vigilante, havia feito escola de Policiais
+  Rodoviarios em Jundiai.
+- Depois de 25 anos na Policia, passou para a reserva em 1998 como Tenente
+  Coronel PM RES.
+- Em 2017 foi inaugurado o acervo do Comando de Policiamento Rodoviario que
+  eterniza o nome do Vigilante Rodoviario e parte de sua historia.
+
+Ideia para o novo Laravel:
+
+- Criar pagina "Vigilante Rodoviario" dentro de Historia/Memoria.
+- Usar como conteudo institucional de memoria e identidade.
+
+
+12. QUARTEIS, BASES, COMPANHIAS, PELOTOES, RODOVIAS E CIDADES
+-------------------------------------------------------------
+Foi encontrada uma pagina/revisao chamada:
+
+- Quarteis e Bases do Policiamento Rodoviario
+
+Versao atualizada encontrada:
+
+- Quarteis e Bases do 5o Batalhao do Policiamento Rodoviario
+
+A estrutura da informacao inclui:
+
+- Nome da base.
+- Codigo/rodovia da base.
+- OPM.
+- Companhia.
+- Pelotao.
+- Endereco.
+- Rodovia.
+- Km.
+- Telefone.
+- Cidade.
+
+Importante:
+Parte da lista antiga tambem contem bases de outros BPRv. A versao mais util
+para o novo site e a que comeca com:
+
+"Quarteis e Bases do 5o Batalhao do Policiamento Rodoviario"
+
+
+13. BASES DO 5o BPRv IDENTIFICADAS
+----------------------------------
+Bases do 5o BPRv localizadas no SQL:
+
+1. Base de Sorocaba - 270/4
+   OPM: 5o BPRv - 1a Cia - 1o Pel
+   Endereco: SP-270 Rod. Raposo Tavares, Km 110
+   Telefone: (15) 3221-1609 / 1590
+   Cidade: Sorocaba
+
+2. Base de Aluminio - 270/3
+   OPM: 5o BPRv - 1a Cia - 1o Pel
+   Endereco: SP-270 Rod. Raposo Tavares, Km 77,4
+   Telefone: (11) 4715-1161
+   Cidade: Aluminio
+
+3. Base de Piedade - 079/1
+   OPM: 5o BPRv - 1a Cia - 1o Pel
+   Endereco: SP-079 Rod. Raimundo Antunes Soares, km 120,5
+   Telefone: (15) 3244-1102
+   Cidade: Piedade
+
+4. Base de Itu - 075/1
+   OPM: 5o BPRv - 1a Cia - 2o Pel
+   Endereco: SP-075 Rod. Dep. Archimedes Lammoglia, Km 24
+   Telefone: (11) 4025-2711
+   Cidade: Itu
+
+5. Base de Itu - 280/3
+   OPM: 5o BPRv - 1a Cia - 2o Pel
+   Endereco: SP-280 Rod. Presidente Castello Branco, Km 75
+   Telefone: (11) 4026-9010
+   Cidade: Itu
+
+6. Base de Cabreuva - 300/1
+   OPM: 5o BPRv - 1a Cia - 2o Pel
+   Endereco: SP-300 Dom Gabriel Paulino Bueno Couto, km 86,6
+   Telefone: (11) 4529-5080
+   Cidade: Cabreuva
+
+7. Base de Itapetininga - 270/5
+   OPM: 5o BPRv - 2a Cia - 1o Pel
+   Endereco: SP-270 Rod. Raposo Tavares, km 167
+   Telefone: (15) 3271-2945
+   Cidade: Itapetininga
+
+8. Base de Capao Bonito - 127/2
+   OPM: 5o BPRv - 2a Cia - 1o Pel
+   Endereco: SP-127 Rod. Professor Francisco da Silva Pontes, Km 210
+   Telefone: (15) 3543-1526
+   Cidade: Capao Bonito
+
+9. Base de Itapeva - 258/1
+   OPM: 5o BPRv - 2a Cia - 2o Pel
+   Endereco: SP-258 Rod. Francisco Alves Negrao, Km 282
+   Telefone: (15) 3522-2550
+   Cidade: Itapeva
+
+10. Base de Itarare - 258/2
+    OPM: 5o BPRv - 2a Cia - 2o Pel
+    Endereco: SP-258 Rod. Francisco Alves Negrao, km 344
+    Telefone: (15) 3532-4704
+    Cidade: Itarare
+
+11. Base de Paranapanema - 270/6
+    OPM: 5o BPRv - 2a Cia - 2o Pel
+    Endereco: SP-270 Rod. Raposo Tavares, Km 198,5
+    Telefone: (14) 3713-1331
+    Cidade: Paranapanema
+
+12. Base de Tatui - 280/4
+    OPM: 5o BPRv - 3a Cia - 1o Pel
+    Endereco: SP-280 Rod. Presidente Castello Branco, Km 129
+    Telefone: (15) 3251-3444
+    Cidade: Tatui
+
+13. Base de Tiete - 127/1
+    OPM: 5o BPRv - 3a Cia - 1o Pel
+    Endereco: SP-127 Rod. Cornelio Pires, Km 78,2
+    Telefone: (15) 3282-8470
+    Cidade: Tiete
+
+14. Base de Laranjal Paulista - 300/2
+    OPM: 5o BPRv - 3a Cia - 1o Pel
+    Endereco: SP-300 Rod. Marechal Rondon, Km 178,5
+    Telefone: (15) 3283-3225
+    Cidade: Laranjal Paulista
+
+15. Base de Botucatu - 300/3
+    OPM: 5o BPRv - 3a Cia - 2o Pel
+    Endereco: SP-300 Rod. Marechal Rondon, Km 254
+    Telefone: (14) 3815-7756
+    Cidade: Botucatu
+
+16. Base de Avare - 255/2
+    OPM: 5o BPRv - 3a Cia - 2o Pel
+    Endereco: SP-255 Rod. Joao Mellao, km 261,75
+    Telefone: (14) 3732-2298
+    Cidade: Avare
+
+17. Base de Pardinho - 280/5
+    OPM: 5o BPRv - 3a Cia - 2o Pel
+    Endereco: SP-280 Rod. Presidente Castello Branco, km 197
+    Telefone: (14) 3886-1100
+    Cidade: Pardinho
+
+18. Base de Avare - 280/6
+    OPM: 5o BPRv - 3a Cia - 2o Pel
+    Endereco: SP-280 Rod. Presidente Castello Branco, km 248
+    Telefone: (15) 3451-4459
+    Cidade: Avare
+
+19. Base de Barueri - 280/1
+    OPM: 5o BPRv - 4a Cia - 1o Pel
+    Endereco: SP-280 Rod. Presidente Castello Branco, Km 25,3
+    Telefone: (11) 2078-0410 / 0411
+    Cidade: Barueri
+
+20. Base de Aracariguama - 280/2
+    OPM: 5o BPRv - 4a Cia - 1o Pel
+    Endereco: SP-280 Rod. Presidente Castello Branco, Km 46,3
+    Telefone: (11) 4136-7221
+    Cidade: Aracariguama
+
+21. Base de Sao Paulo - 270/1
+    OPM: 5o BPRv - 4a Cia - 2o Pel
+    Endereco: SP-270 Rod. Raposo Tavares, km 18,5
+    Telefone: (11) 3872-4781
+    Cidade: Sao Paulo
+
+22. Base de Cotia - 270/2
+    OPM: 5o BPRv - 4a Cia - 2o Pel
+    Endereco: SP-270 Rod. Raposo Tavares, km 35,5
+    Telefone: (11) 4243-7194
+    Cidade: Cotia
+
+Observacao:
+O SQL tambem contem duplicidades e entradas antigas misturadas com bases de
+outros BPRv. Para o novo site, convem validar a lista oficial antes de publicar.
+
+
+14. AGRUPAMENTO POR COMPANHIA
+-----------------------------
+Com base nos dados encontrados:
+
+1a Cia:
+
+- Sorocaba
+- Aluminio
+- Piedade
+- Itu
+- Cabreuva
+
+2a Cia:
+
+- Itapetininga
+- Capao Bonito
+- Itapeva
+- Itarare
+- Paranapanema
+
+3a Cia:
+
+- Tatui
+- Tiete
+- Laranjal Paulista
+- Botucatu
+- Avare
+- Pardinho
+
+4a Cia:
+
+- Barueri
+- Aracariguama
+- Sao Paulo
+- Cotia
+
+
+15. RODOVIAS CITADAS NAS BASES DO 5o BPRv
+-----------------------------------------
+Rodovias citadas:
+
+- SP-270 - Rod. Raposo Tavares
+- SP-079 - Rod. Raimundo Antunes Soares
+- SP-075 - Rod. Dep. Archimedes Lammoglia
+- SP-280 - Rod. Presidente Castello Branco
+- SP-300 - Rod. Dom Gabriel Paulino Bueno Couto
+- SP-127 - Rod. Professor Francisco da Silva Pontes
+- SP-258 - Rod. Francisco Alves Negrao
+- SP-127 - Rod. Cornelio Pires
+- SP-300 - Rod. Marechal Rondon
+- SP-255 - Rod. Joao Mellao
+
+Observacao:
+Os nomes precisam ser revisados antes de publicacao final, pois vieram de uma
+base WordPress antiga e podem ter abreviacoes ou grafias antigas.
+
+
+16. HOME ANTIGA
+---------------
+A pagina Inicio antiga tinha os seguintes blocos/cards:
+
+- Vigilante Rodoviario
+  Chamada: Conheca a Historia do Vigilante Rodoviario.
+
+- PM do Mes
+  Chamada: Policial Militar do Mes de Fevereiro.
+
+- Ocorrencia Destaque
+  Chamada: Ocorrencia de Destaque do Mes de Fevereiro.
+
+- Gabinete de Treinamento
+  Chamada: Planejamento, organizacao e direcao voltados para a formacao.
+
+- Mapa do CPRv
+  Chamada: Visualize os Mapas do CPRv no Estado de Sao Paulo.
+
+- Challenge Coin 5o BPRv
+  Chamada: Conheca a Historia da Challenge Coin do 5o BPRv.
+
+- Telefones e E-mails
+
+Tambem havia slider na home:
+
+- [rev_slider alias="home"]
+
+
+17. CONTATOS SETORIAIS DA HOME
+------------------------------
+Contatos encontrados:
+
+Area de Pessoal:
+
+- Telefone: (15) 3333-3149
+- E-mail: 5bprvp1@policiamilitar.sp.gov.br
+
+Area de Operacoes e Estatisticas:
+
+- Telefone: (15) 3333-3185
+- E-mail: 5bprvp3@policiamilitar.sp.gov.br
+
+Gabinete de Treinamento:
+
+- Telefone: (15) 3333-3183
+- E-mail: 5bprvgt@policiamilitar.sp.gov.br
+
+Area de Logistica:
+
+- Telefone: (15) 3333-3170
+- E-mail: 5bprvp4@policiamilitar.sp.gov.br
+
+Comunicacao Social:
+
+- Telefone: (15) 3333-3154
+- E-mail: 5bprvp5@policiamilitar.sp.gov.br
+
+Ocorrencias Rodoviarias:
+
+- Telefone: (15) 3333-3140
+- E-mail: 5bprv@policiamilitar.sp.gov.br
+
+Area de Financas:
+
+- Telefone: (15) 3333-3158
+- E-mail: 5bprvconvenios@policiamilitar.sp.gov.br
+
+Justica e Disciplina:
+
+- Telefone: (15) 3333-3148
+- E-mail: 5bprvsjd@policiamilitar.sp.gov.br
+
+
+18. MAPA DO CPRv
+----------------
+Na home antiga havia card chamado:
+
+- Mapa do CPRv
+
+Chamada:
+
+- Visualize os Mapas do CPRv no Estado de Sao Paulo.
+
+Links/imagens citadas:
+
+- MAPA_PMRv_2020-Atualizado-V5-1.jpeg
+- Divis_es-dos-BPRvs-2020-destravado-11-1.pdf
+
+Ideia para novo Laravel:
+
+- Criar pagina "Area de Atuacao" com mapa.
+- Criar link para PDF do mapa do CPRv, se ainda estiver valido.
+- Criar mapa visual das companhias/bases.
+
+
+19. CHALLENGE COIN 5o BPRv
+--------------------------
+Na home antiga havia card:
+
+- CHALLENGE COIN 5o BPRv
+
+Chamada:
+
+- Conheca a Historia da Challenge Coin do 5o BPRv.
+
+Ideia para novo Laravel:
+
+- Criar pagina de memoria/institucional sobre simbolos, brasoes e Challenge Coin.
+
+
+20. BOLETINS INTERNOS
+---------------------
+Foi encontrada pagina publicada:
+
+- Titulo: Boletins Internos
+- Slug: boletins-internos
+- Status: publish
+
+O conteudo extraido estava vazio ou sem texto relevante no trecho analisado.
+
+Observacao:
+Pode indicar que o site antigo tinha area de arquivos/boletins, talvez ligada ao
+plugin pretty-file-list-pro ou pastas de download.
+
+
+21. UPLOADS E ACERVO
+--------------------
+A pasta uploads existe no backup correto:
+
+- 2013
+- 2016
+- 2017
+- 2020
+- 2021
+- 2022
+- 2023
+- 2024
+- 2025
+- 2026
+- custom_styles
+- download-manager-files
+- js_composer
+- la_icon_sets
+- revslider
+- simple-file-list
+- wpforms
+
+Quantidade aproximada por extensao no backup completo:
+
+- .jpg: 1449
+- .png: 1159
+- .jpeg: 56
+- .gif: 63
+- .pdf: 14
+- .svg: 1505
+
+Ideia para novo Laravel:
+
+- Separar imagens por categorias.
+- Selecionar fotos de fachada, comandantes, bases, operacoes, acervo historico.
+- Evitar copiar tudo sem curadoria.
+
+
+22. INFORMACOES QUE DEVEM SER VALIDADAS
+---------------------------------------
+Antes de publicar no novo site, validar:
+
+- Comandante atual.
+- Lista de ex-comandantes.
+- Fotos correspondentes aos comandantes.
+- Endereco e telefone da sede.
+- E-mails setoriais.
+- Bases atualmente ativas.
+- Bases monitoradas.
+- Telefones das bases.
+- Rodovias e kms.
+- Cidades de abrangencia.
+- Mapa/PDF do CPRv.
+- Redes sociais oficiais ativas.
+
+
+23. IDEIAS PARA O NOVO SITE LARAVEL
+-----------------------------------
+Com base no site WordPress antigo, o novo site Laravel pode ter:
+
+Menu publico:
+
+- Inicio
+- Institucional
+- Historia
+- Comandante
+- Ex-Comandantes
+- Bases e Companhias
+- Area de Atuacao
+- Vigilante Rodoviario
+- Noticias
+- Galeria
+- Contato
+
+Paginas institucionais sugeridas:
+
+- Historia do 5o BPRv
+- Historia do Policiamento Rodoviario
+- Comandante atual
+- Eternos Comandantes
+- Bases do 5o BPRv
+- Companhias e Pelotoes
+- Mapa do CPRv
+- Vigilante Rodoviario
+- Challenge Coin
+- Contatos
+
+Admin Laravel sugerido:
+
+- Gerenciar paginas.
+- Gerenciar comandante atual.
+- Gerenciar ex-comandantes.
+- Gerenciar bases.
+- Gerenciar noticias.
+- Gerenciar galerias.
+- Gerenciar banners.
+- Gerenciar contatos.
+- Gerenciar arquivos/PDFs.
+
+
+24. CONCLUSAO
+-------------
+O backup correto contem informacoes muito mais ricas que a pasta analisada
+anteriormente.
+
+Principais achados:
+
+- Existe conteudo real de comandante atual.
+- Existe curriculo do comandante.
+- Existe lista de eternos comandantes.
+- Existe texto historico sobre a origem da Policia Rodoviaria e do 5o BPRv.
+- Existe lista de bases com companhia, pelotao, rodovia, km, telefone e cidade.
+- Existem contatos setoriais do batalhao.
+- Existem redes sociais oficiais.
+- Existe uma estrutura antiga de home com cards institucionais.
+- Existe acervo de imagens e PDFs em uploads.
+
+Este material deve ser usado como rascunho e referencia editorial para o novo
+site Laravel, nao como codigo a ser copiado diretamente.
+

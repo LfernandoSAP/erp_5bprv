@@ -1,0 +1,10 @@
+reiniciar:
+
+powershell -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1
+
+
+
+confirmar se subiu.
+powershell -ExecutionPolicy Bypass -File .\scripts\check-erp.ps1
+
+

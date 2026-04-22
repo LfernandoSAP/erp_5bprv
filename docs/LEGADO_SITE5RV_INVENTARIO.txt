@@ -1,0 +1,808 @@
+INVENTARIO DO SITE LEGADO - SITE5RV_ANTIGO
+ERP 5BPRv / Novo Site Institucional Laravel
+
+Data da analise: 15/04/2026
+Pasta analisada: c:\Users\Telematica\Documents\erp5bprv\Site5Rv_antigo
+
+OBSERVACAO IMPORTANTE
+---------------------
+A pasta BACKUP_ANTES_UPDATE_2026 nao foi encontrada no workspace com esse nome.
+Como existe a pasta Site5Rv_antigo, ela foi usada como fonte provavel do site legado.
+
+Este inventario nao trata do ERP. O objetivo aqui e levantar ideias, textos, secoes,
+imagens e estrutura editorial que podem servir como rascunho para um novo site
+institucional em Laravel.
+
+
+1. VISAO GERAL DO SITE LEGADO
+-----------------------------
+O site legado e um portal institucional construido em Laravel, com Blade,
+Bootstrap, Eloquent ORM e area administrativa autenticada.
+
+A estrutura principal encontrada indica um CMS simples para:
+
+- Paginas institucionais.
+- Publicacoes/noticias.
+- Banners/destaques.
+- Galerias.
+- Fotos de galerias.
+- Configuracoes do portal.
+- Usuarios administrativos.
+
+Principais arquivos e pastas analisados:
+
+- Site5Rv_antigo/routes/web.php
+- Site5Rv_antigo/app/Models/Page.php
+- Site5Rv_antigo/app/Models/Post.php
+- Site5Rv_antigo/app/Models/Banner.php
+- Site5Rv_antigo/app/Models/Gallery.php
+- Site5Rv_antigo/app/Models/GalleryPhoto.php
+- Site5Rv_antigo/app/Models/Setting.php
+- Site5Rv_antigo/app/Http/Controllers/Site/HomeController.php
+- Site5Rv_antigo/resources/views/layouts/public.blade.php
+- Site5Rv_antigo/resources/views/public/home.blade.php
+- Site5Rv_antigo/resources/views/public/posts/index.blade.php
+- Site5Rv_antigo/resources/views/public/galleries/index.blade.php
+- Site5Rv_antigo/resources/css/app.css
+- Site5Rv_antigo/database/database.sqlite
+- Site5Rv_antigo/database/seeders
+- Site5Rv_antigo/docs
+- Site5Rv_antigo/imagens
+
+
+2. ROTAS PUBLICAS ENCONTRADAS
+-----------------------------
+As rotas publicas principais do portal legado sao:
+
+- /
+  Home institucional.
+
+- /publicacoes
+  Listagem de publicacoes/noticias.
+
+- /publicacoes/{post:slug}
+  Detalhe de uma publicacao.
+
+- /institucional/{page:slug}
+  Detalhe de uma pagina institucional.
+
+- /galerias
+  Listagem de galerias.
+
+- /galerias/{gallery:slug}
+  Detalhe de uma galeria.
+
+Tambem existe acesso administrativo:
+
+- /admin
+  Dashboard administrativo.
+
+- /admin/posts
+  CRUD de publicacoes.
+
+- /admin/banners
+  CRUD de banners.
+
+- /admin/pages
+  CRUD de paginas institucionais.
+
+- /admin/galleries
+  CRUD de galerias.
+
+- /admin/settings
+  Configuracoes do portal.
+
+- /admin/users
+  Usuarios administrativos.
+
+
+3. IDENTIDADE INSTITUCIONAL ENCONTRADA
+--------------------------------------
+O site legado ja possui uma base de identidade institucional.
+
+Informacoes encontradas:
+
+- Nome do portal:
+  5o Batalhao de Policia Rodoviaria
+
+- Subtitulo:
+  Portal Institucional
+
+- Rodape institucional:
+  Policia Militar do Estado de Sao Paulo - 5o Batalhao de Policia Rodoviaria
+
+- Frase institucional usada no cabecalho:
+  Preservacao da vida, seguranca viaria e presenca institucional nas rodovias.
+
+- Identidade visual:
+  O layout usa logo da Policia Militar do Estado de Sao Paulo de um lado e
+  logo do 5o BPRv do outro.
+
+- Paleta visual do legado:
+  Preto institucional, dourado, fundo claro, cards brancos e composicao sobria.
+
+Arquivos relacionados:
+
+- Site5Rv_antigo/resources/views/layouts/public.blade.php
+- Site5Rv_antigo/resources/css/app.css
+- Site5Rv_antigo/app/Models/Setting.php
+
+
+4. ESTRUTURA DA HOME
+--------------------
+A home do site legado tem uma boa estrutura editorial para servir de rascunho.
+
+Blocos encontrados:
+
+- Topbar com subtitulo, endereco e telefone.
+- Cabecalho com logos institucionais.
+- Menu publico.
+- Hero/destaques institucionais.
+- Mensagem institucional.
+- Acesso rapido.
+- Historico institucional.
+- Redes sociais.
+- Blocos de atuacao/comunicacao/servico.
+- Ultimas publicacoes.
+- Galeria.
+- Rodape com contato e redes.
+
+Menu publico encontrado:
+
+- Inicio.
+- Historico.
+- Redes Sociais.
+- Publicacoes.
+- Galerias.
+- Contato.
+
+Essa estrutura pode inspirar a home do novo site Laravel, mas nao deve ser copiada
+automaticamente sem revisao visual e textual.
+
+
+5. HISTORICO DO BATALHAO
+------------------------
+Foi encontrada uma pagina chamada "Historico Institucional".
+
+Registro no banco:
+
+- Titulo:
+  Historico Institucional
+
+- Slug:
+  historico-institucional
+
+- Status:
+  published
+
+Conteudo base encontrado no banco:
+
+"O 5o Batalhao de Policia Rodoviaria atua com foco na preservacao da vida,
+na seguranca viaria e na presenca ostensiva especializada nas rodovias.
+
+O portal institucional foi estruturado para comunicar acoes, conteudo editorial
+e registros oficiais com sobriedade e clareza."
+
+Observacao:
+Esse conteudo e curto e generico, mas serve como ponto de partida para uma
+pagina institucional mais completa no novo site.
+
+Arquivos relacionados:
+
+- Site5Rv_antigo/database/seeders/PageSeeder.php
+- Site5Rv_antigo/app/Http/Controllers/Site/HomeController.php
+- Site5Rv_antigo/resources/views/public/home.blade.php
+- Site5Rv_antigo/resources/views/public/pages/show.blade.php
+
+
+6. AREA DE ATUACAO
+------------------
+Foi encontrada uma pagina chamada "Area de Atuacao".
+
+Registro no banco:
+
+- Titulo:
+  Area de Atuacao
+
+- Slug:
+  area-de-atuacao
+
+- Status:
+  published
+
+Conteudo base encontrado no banco:
+
+"Conteudo institucional de referencia para descrever o escopo de atuacao da
+unidade.
+
+Na proxima etapa, este texto pode ser refinado com dados operacionais e
+administrativos oficiais."
+
+Observacao:
+O conteudo ainda esta em formato de placeholder. No novo site, essa pagina
+poderia receber informacoes reais sobre:
+
+- Area territorial do 5o BPRv.
+- Companhias.
+- Pelotoes.
+- Rodovias atendidas.
+- Cidades/regioes de abrangencia.
+- Funcao operacional da unidade.
+
+
+7. MISSAO, DIRETRIZ E PERFIL INSTITUCIONAL
+------------------------------------------
+Nao foi encontrada uma pagina formal chamada "Missao, Visao e Valores".
+Porem a home possui blocos com essa ideia.
+
+Termos e conceitos encontrados:
+
+- Missao.
+- Diretriz.
+- Foco: Seguranca viaria.
+- Perfil: Sobriedade institucional.
+- Estrategia: Portal escalavel.
+- Preservacao da vida.
+- Ordem publica.
+- Seguranca viaria.
+- Policiamento ostensivo rodoviario.
+
+Trecho encontrado no controller como fallback:
+
+"Unidade especializada no policiamento ostensivo rodoviario, voltada a
+preservacao da vida, da ordem publica e da seguranca viaria nas rodovias
+sob responsabilidade do batalhao."
+
+Ideia reaproveitavel:
+Criar no novo Laravel uma pagina mais completa de:
+
+- Missao.
+- Visao.
+- Valores.
+- Diretrizes institucionais.
+- Perfil operacional.
+
+
+8. COMANDANTES
+--------------
+Foi pesquisado no site legado por:
+
+- comandante
+- comandantes
+- comando
+- historico
+- historia
+- batalhao
+
+Resultado:
+Nao foi encontrada uma pagina, tabela, model ou conteudo especifico de
+comandantes.
+
+Conclusao:
+O legado nao possui uma area pronta de comandantes. Se essa secao for usada no
+novo site, ela devera ser criada com conteudo novo ou a partir de outra fonte.
+
+Sugestao de secao futura:
+
+- Comandante atual.
+- Galeria de ex-comandantes.
+- Periodo de comando.
+- Foto.
+- Posto/grad.
+- Pequena biografia institucional.
+
+
+9. PUBLICACOES / NOTICIAS
+-------------------------
+O site legado possui modulo de publicacoes.
+
+Campos do model Post:
+
+- title
+- slug
+- excerpt
+- content
+- image_path
+- status
+- is_featured
+- published_at
+- created_by
+- updated_by
+
+Publicacoes encontradas no banco:
+
+1. Operacao integrada reforca orientacao aos motoristas
+   Slug: operacao-integrada-reforca-orientacao-aos-motoristas
+   Destaque: sim
+
+2. Batalhao amplia presenca institucional em campanhas educativas
+   Slug: batalhao-amplia-presenca-institucional-em-campanhas-educativas
+   Destaque: nao
+
+3. Galeria institucional destaca rotina operacional da unidade
+   Slug: galeria-institucional-destaca-rotina-operacional-da-unidade
+   Destaque: nao
+
+Exemplo de conteudo encontrado:
+
+"Acao institucional de carater preventivo com foco na seguranca viaria.
+
+O batalhao reforcou o policiamento em trechos estrategicos, ampliando a
+presenca operacional e a orientacao aos usuarios das rodovias."
+
+Ideia reaproveitavel:
+No novo site, criar modulo de Noticias/Publicacoes com:
+
+- Titulo.
+- Resumo.
+- Conteudo.
+- Imagem principal.
+- Categoria.
+- Data.
+- Status de publicacao.
+- Destaque na home.
+
+
+10. BANNERS / DESTAQUES
+-----------------------
+O site legado possui modulo de banners.
+
+Campos do model Banner:
+
+- title
+- subtitle
+- image_path
+- link_url
+- sort_order
+- is_active
+- created_by
+- updated_by
+
+Banners encontrados:
+
+1. Fiscalizacao com foco na preservacao da vida
+   Subtitulo: Atuacao preventiva, orientacao aos usuarios e presenca operacional
+   nas rodovias.
+   Link: /publicacoes
+
+2. Policiamento ostensivo rodoviario especializado
+   Subtitulo: Mobilidade, disciplina operacional e resposta rapida em eixos
+   estrategicos.
+   Link: #historico
+
+3. Integracao, proximidade e servico publico
+   Subtitulo: Comunicacao institucional clara, transparente e conectada a
+   sociedade.
+   Link: #redes-sociais
+
+Ideia reaproveitavel:
+Usar banners como hero principal ou carrossel do novo site institucional.
+
+
+11. GALERIAS
+------------
+O site legado possui modulo de galerias.
+
+Campos do model Gallery:
+
+- title
+- slug
+- description
+- cover_image_path
+- status
+- published_at
+- created_by
+- updated_by
+
+Campos do model GalleryPhoto:
+
+- gallery_id
+- title
+- file_path
+- caption
+- sort_order
+- is_active
+
+Galerias encontradas no banco:
+
+1. Operacoes Rodoviarias
+   Slug: operacoes-rodoviarias
+   Descricao: Registros institucionais de acoes operacionais e policiamento
+   ostensivo rodoviario.
+
+2. Atividades Institucionais
+   Slug: atividades-institucionais
+   Descricao: Eventos, solenidades e momentos de representacao institucional
+   da unidade.
+
+Ideia reaproveitavel:
+No novo site, criar galerias por categoria:
+
+- Operacoes.
+- Solenidades.
+- Acoes educativas.
+- Frota historica.
+- Campanhas.
+- Eventos institucionais.
+- Memoria do batalhao.
+
+
+12. REDES SOCIAIS
+-----------------
+O legado possui uma secao de redes sociais, especialmente Instagram.
+
+Configuracao encontrada:
+
+- instagram_url
+
+Texto de ideia encontrado:
+
+"Canal direto com a comunidade."
+
+"Espaco reservado para integracao com Instagram e outras redes oficiais do
+batalhao."
+
+Ideia reaproveitavel:
+No novo Laravel, manter uma area de redes sociais na home e no rodape.
+
+
+13. CONTATO
+-----------
+O legado possui estrutura de contato simples.
+
+Campos em configuracoes:
+
+- address
+- phone
+- instagram_url
+- footer_text
+
+Valores encontrados no banco:
+
+- address:
+  Sao Paulo/SP
+
+- phone:
+  (11) 0000-0000
+
+- instagram_url:
+  https://www.instagram.com/
+
+Observacao:
+Os valores sao genericos e precisam ser substituidos pelos dados oficiais reais.
+
+
+14. IMAGENS E ACERVO VISUAL
+---------------------------
+A pasta de imagens e um dos pontos mais importantes do legado.
+
+Pasta:
+
+- Site5Rv_antigo/imagens
+
+Foram encontrados muitos arquivos de imagem em formatos:
+
+- jpg
+- jpeg
+- png
+
+Exemplos de arquivos relevantes:
+
+- 5BPRv.jpg
+- 5BPRV-NOVO-73-ANOS.png
+- logo_5rv.png
+- LOGO MONOCROMATICO.png
+- asa_rodoviaria.png
+- bolachao_rodoviaria.png
+- bolachao_rodoviaria2.png
+- brasao-de-armas.png
+- brasao_do_estado_de_Sao_Paulo.svg.png
+- fachada1
+- fachada2.jpeg
+- fachadaAereo.jpeg
+- aereo.jpeg
+- aereo2.jpeg
+- DSC_2584.jpg
+- DSC_2736.jpg
+- DSCN3010.jpg
+- DSCN3058.jpg
+- frente-e-verso.jpg
+
+Tipos de imagens aparentes:
+
+- Fachada da unidade.
+- Fotos aereas.
+- Logos e brasoes.
+- Imagens historicas/institucionais.
+- Fotos operacionais.
+- Materiais visuais do aniversario de 73 anos.
+
+Uso sugerido no novo site:
+
+- Hero da home.
+- Galeria institucional.
+- Pagina de historia.
+- Pagina de identidade visual.
+- Cards de destaque.
+- Rodape/cabecalho.
+- Pagina de memoria institucional.
+
+
+15. LAYOUT E ESTILO VISUAL
+--------------------------
+O legado possui uma identidade visual diferente do ERP.
+
+Caracteristicas:
+
+- Tema claro institucional.
+- Uso de preto, dourado e tons neutros.
+- Cabecalho com visual oficial.
+- Cards com sombra suave.
+- Hero com gradiente e imagem de fundo.
+- Tipografia com fonte de destaque em caixa alta.
+- Menu horizontal publico.
+- Layout responsivo com Bootstrap.
+
+Fontes importadas no CSS:
+
+- Barlow Condensed
+- Source Sans 3
+
+Cores principais no CSS:
+
+- --bprv-black: #101010
+- --bprv-gold: #d5aa32
+- --bprv-gold-soft: #f2df9c
+- --bprv-text: #202020
+- --bprv-muted: #6e6e6e
+
+Ideia reaproveitavel:
+O novo Laravel pode usar essa direcao visual como inspiracao, mas com codigo
+novo e sem copiar problemas de encoding.
+
+
+16. AREA ADMINISTRATIVA
+-----------------------
+O legado possui painel administrativo com funcionalidades de CMS.
+
+Modulos administrativos:
+
+- Dashboard.
+- Banners.
+- Galerias.
+- Paginas.
+- Publicacoes.
+- Configuracoes.
+- Usuarios.
+- Perfil.
+
+Ideia reaproveitavel:
+No novo Laravel, criar um painel admin limpo para gerenciar:
+
+- Home.
+- Banners.
+- Noticias.
+- Paginas institucionais.
+- Comandantes.
+- Galerias.
+- Configuracoes do portal.
+
+
+17. DOCUMENTACAO TECNICA DO LEGADO
+----------------------------------
+Existe uma pasta de documentacao tecnica:
+
+- Site5Rv_antigo/docs
+
+Arquivos encontrados:
+
+- README.md
+- arquitetura.md
+- checklist-homologacao.md
+- comandos-iniciais.md
+- deploy-apache.md
+- deploy-cpd-pmesp.md
+- instalacao-windows-php-composer.md
+- padroes.md
+- plano-fase-1.md
+- publicacao-smb.md
+
+Assuntos abordados:
+
+- Arquitetura do portal Laravel.
+- Instalacao local.
+- Deploy Apache.
+- Deploy em ambiente CPD/PMESP.
+- Publicacao via SMB.
+- Checklist de homologacao.
+- Padroes de desenvolvimento.
+
+Ideia reaproveitavel:
+Usar esses documentos como referencia para escrever a documentacao nova do site,
+mas revisando caminhos, stack, versoes e comandos.
+
+
+18. BANCO DE DADOS DO LEGADO
+----------------------------
+Banco encontrado:
+
+- Site5Rv_antigo/database/database.sqlite
+
+Tabelas encontradas:
+
+- banners
+- cache
+- cache_locks
+- failed_jobs
+- galleries
+- gallery_photos
+- job_batches
+- jobs
+- migrations
+- pages
+- password_reset_tokens
+- posts
+- sessions
+- settings
+- sqlite_sequence
+- users
+
+Contagem de registros relevantes:
+
+- users: 1
+- pages: 2
+- posts: 3
+- banners: 3
+- galleries: 2
+- gallery_photos: 4
+- settings: 6
+
+Observacao importante:
+Ao consultar o SQLite diretamente, os textos aparecem com acentos corretos.
+Em alguns arquivos PHP/Blade/Seeder, os textos aparecem com mojibake.
+Portanto, se algum texto for reaproveitado, a melhor fonte e o banco SQLite,
+nao os arquivos com texto quebrado.
+
+
+19. PROBLEMAS OBSERVADOS NO LEGADO
+----------------------------------
+Problemas encontrados:
+
+- Mojibake em varios arquivos Blade/PHP/Docs:
+  Exemplos:
+  5Âº, PolÃ­cia, AtuaÃ§Ã£o, PublicaÃ§Ãµes.
+
+- Conteudos institucionais ainda genericos.
+
+- Nao ha secao especifica de comandantes.
+
+- Nao ha linha do tempo historica completa.
+
+- Nao ha organograma real.
+
+- Nao ha relacao real de rodovias, cidades, companhias ou pelotoes.
+
+- Documentacao aponta caminhos antigos, como Site5Rv.
+
+- Codigo Laravel antigo serve como referencia, nao como base direta para copiar.
+
+
+20. O QUE VALE REAPROVEITAR COMO IDEIA
+--------------------------------------
+Vale reaproveitar conceitualmente:
+
+- Estrutura de home institucional.
+- Menu publico.
+- Banners/destaques.
+- Paginas fixas institucionais.
+- Modulo de noticias/publicacoes.
+- Modulo de galerias.
+- Configuracoes do portal.
+- Area administrativa CMS.
+- Ideia de acesso administrativo.
+- Estilo visual preto/dourado institucional.
+- Uso de fotos grandes na home.
+- Acervo visual da pasta imagens.
+- Documentacao de deploy como referencia.
+
+
+21. O QUE NAO VALE REAPROVEITAR DIRETAMENTE
+-------------------------------------------
+Nao vale reaproveitar diretamente:
+
+- Codigo antigo sem revisao.
+- Textos em arquivos com mojibake.
+- Dependencias antigas.
+- Vendor/node_modules do legado.
+- Configuracoes .env antigas.
+- Dados genericos como telefone e endereco ficticios.
+- Views Blade com encoding quebrado.
+
+
+22. SUGESTAO DE ESTRUTURA PARA O NOVO SITE LARAVEL
+--------------------------------------------------
+Com base no legado, o novo site Laravel poderia ter:
+
+Menu publico:
+
+- Inicio.
+- Institucional.
+- Historia.
+- Comandantes.
+- Area de Atuacao.
+- Noticias.
+- Galerias.
+- Contato.
+
+Modulos administrativos:
+
+- Dashboard.
+- Banners.
+- Paginas.
+- Noticias.
+- Galerias.
+- Comandantes.
+- Configuracoes.
+- Usuarios.
+
+Models sugeridos:
+
+- Page
+- Post
+- Banner
+- Gallery
+- GalleryPhoto
+- Commander
+- Setting
+- User
+
+Secoes da home:
+
+- Hero institucional.
+- Destaques.
+- Mensagem do comando ou chamada institucional.
+- Historico resumido.
+- Area de atuacao resumida.
+- Noticias recentes.
+- Galeria em destaque.
+- Redes sociais.
+- Contato.
+
+
+23. TOPICOS QUE PRECISAM DE CONTEUDO NOVO
+-----------------------------------------
+O legado nao fornece conteudo completo para:
+
+- Comandante atual.
+- Ex-comandantes.
+- Historia detalhada do batalhao.
+- Linha do tempo.
+- Criacao da unidade.
+- Area territorial real.
+- Companhias e pelotoes.
+- Rodovias atendidas.
+- Cidades abrangidas.
+- Galeria historica organizada.
+- Missao, visao e valores oficiais.
+- Contatos oficiais atualizados.
+- Redes sociais oficiais atualizadas.
+
+
+24. CONCLUSAO
+-------------
+O Site5Rv_antigo e util como rascunho para o novo site institucional em Laravel.
+Ele nao deve ser tratado como codigo a migrar automaticamente.
+
+O maior valor encontrado esta em:
+
+- Ideia de arquitetura editorial.
+- Estrutura de CMS.
+- Organizacao da home.
+- Textos iniciais do banco SQLite.
+- Acervo visual da pasta imagens.
+- Documentacao antiga de deploy.
+
+Para o novo Laravel, o ideal e construir tudo limpo, com encoding correto,
+conteudo revisado, admin bem organizado e uma identidade institucional mais
+forte.
+
