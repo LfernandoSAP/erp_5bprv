@@ -248,6 +248,13 @@ const moduleCards = {
     subtitle: "Selecione um módulo para acessar",
     cards: [
       {
+        key: "p5/aniversariantes",
+        label: "Aniversariantes do Efetivo",
+        icon: "calendar",
+        color: palette.orange,
+        description: "Consulte aniversariantes da semana e do mÃªs com base no cadastro dos policiais.",
+      },
+      {
         key: "module/p5/painel",
         label: "Painel Institucional",
         icon: "megaphone",
@@ -544,6 +551,7 @@ const pageToModuleKey = {
   movements: "module/p4",
   logs: "module/p4",
   "module/p5": "module/p5",
+  "p5/aniversariantes": "module/p5",
   "module/p5/painel": "module/p5",
   "module/assuntos-gerais": "module/assuntos-gerais",
   rancho: "module/assuntos-gerais",

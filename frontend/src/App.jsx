@@ -29,6 +29,7 @@ const ControleEfetivoPage = lazy(() => import("./pages/ControleEfetivoPage"));
 const ControleVelocidadeNoturnoPage = lazy(() => import("./pages/ControleVelocidadeNoturnoPage"));
 const EapPage = lazy(() => import("./pages/EapPage"));
 const PlanilhaAcidenteViaturaPage = lazy(() => import("./pages/PlanilhaAcidenteViaturaPage"));
+const P5BirthdaysPage = lazy(() => import("./pages/P5BirthdaysPage"));
 const CopsPage = lazy(() => import("./pages/CopsPage"));
 const MapaForcaPage = lazy(() => import("./pages/MapaForcaPage"));
 const FleetGeneralControlPage = lazy(() => import("./pages/FleetGeneralControlPage"));
@@ -1028,6 +1029,10 @@ function App() {
 
   if (currentPage === "rancho") {
     content = <RanchoPage onBack={() => navigateToPage("module/assuntos-gerais")} />;
+  }
+
+  if (currentPage === "p5/aniversariantes") {
+    content = <P5BirthdaysPage onBack={() => navigateToPage("module/p5")} />;
   }
 
   if (currentPage === "module/p5/painel") {
